@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Home, Target, PlusCircle, Calendar, ChevronRight, Search, Trash2, Plus, Minus, Settings, User, ArrowRight, Check, Camera, Moon, Sun, Beef, Wheat, Flame } from 'lucide-react';
+import { Home, Target, PlusCircle, Calendar, ChevronRight, Search, Trash2, Plus, Minus, Settings, User, ArrowRight, Check, Camera, Moon, Sun, Beef, Wheat, Flame, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Page, Food, LoggedFood, DIET_PLANS, DietPlan, MealType, UserProfile, GoalType } from './types';
 import { FOOD_DATABASE } from './foodDatabase';
@@ -738,10 +738,19 @@ export default function App() {
               <input 
                 type="text"
                 placeholder="Search food database..."
-                className="w-full bg-natural-muted dark:bg-dark-accent border-none rounded-2xl py-3 pl-10 pr-4 focus:ring-2 focus:ring-natural-accent dark:focus:ring-dark-highlight transition-all text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                className="w-full bg-natural-muted dark:bg-dark-accent border-none rounded-2xl py-3 pl-10 pr-10 focus:ring-2 focus:ring-natural-accent dark:focus:ring-dark-highlight transition-all text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
+              {searchQuery && (
+                <button 
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-natural-accent dark:hover:text-dark-highlight transition-colors"
+                  aria-label="Clear search"
+                >
+                  <X size={18} />
+                </button>
+              )}
             </div>
             <div className="space-y-3">
               {searchQuery.trim() === '' && (
