@@ -1,20 +1,36 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Macro Tracker 🥑
 
-# Run and deploy your AI Studio app
+A premium, high-performance macro tracking application built with **Next.js 14**, **Tailwind CSS**, and **Lucide Icons**. Track your daily intake of Protein, Carbs, and Fats with a sleek, responsive dashboard.
 
-This contains everything you need to run your app locally.
+### Screenshot
 
-View your app in AI Studio: https://ai.studio/apps/e6af79ed-c9f3-44eb-a2f3-ce84f1672c91
+![image alt]()
 
-## Run Locally
+## Features ✨
 
-**Prerequisites:**  Node.js
+- **Dynamic Dashboard**: Real-time progress rings for calories and macronutrients.
+- **Smart Food Search**: Instant search through a **local JSON food database** for privacy and speed.
+- **Meal Journal**: Track your daily meals and view calculated totals automatically.
+- **Goal Management**: Set custom calorie targets and macro percentage splits.
+- **Local Persistence**: All your data is saved locally in your browser (LocalStorage).
+- **PWA Ready**: Installable on mobile and desktop for a native-like experience.
+-**Built In Presets**: Allow you to chose your dietplan with scientific recommendations.
+
+## Tech Stack 🛠️
+
+- **Framework**: [Next.js 14 (App Router)](https://nextjs.org/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **Icons**: [Lucide React](https://lucide.dev/)
+- **Context Management**: React Context API
+
+## Production Optimization ⚡
+
+This app is optimized for production:
+- **Zero-shifter**: Layout is designed to minimize Cumulative Layout Shift.
+- **Performance**: High Lighthouse scores for performance and accessibility.
+- **Micro-animations**: Smooth transitions using CSS and Framer Motion-like principles.
 
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+
+---
+Built by lhechmi 🚀
