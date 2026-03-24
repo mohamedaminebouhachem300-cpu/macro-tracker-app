@@ -1,20 +1,52 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Macro Tracker 🥑
 
-# Run and deploy your AI Studio app
+A premium, high-performance macro tracking application built with **Next.js 14**, **Tailwind CSS**, and **Lucide Icons**. Track your daily intake of Protein, Carbs, and Fats with a sleek, responsive dashboard.
 
-This contains everything you need to run your app locally.
+### Screenshot
+-**Home Dashboard**
+![image alt](https://github.com/mohamedaminebouhachem300-cpu/macro-tracker-app/blob/b6ec76fcd2f57a5eeffc6e54651dd2075bcdf81e/macro1.png)
 
-View your app in AI Studio: https://ai.studio/apps/e6af79ed-c9f3-44eb-a2f3-ce84f1672c91
+-**Goals and Plans**
+![image alt](https://github.com/mohamedaminebouhachem300-cpu/macro-tracker-app/blob/b6ec76fcd2f57a5eeffc6e54651dd2075bcdf81e/macro2.png)
 
-## Run Locally
+-**Settings**
+![image alt](https://github.com/mohamedaminebouhachem300-cpu/macro-tracker-app/blob/b6ec76fcd2f57a5eeffc6e54651dd2075bcdf81e/macro3.png)
 
-**Prerequisites:**  Node.js
+## Features ✨
+
+-**Dynamic Dashboard**: Real-time visualization of remaining calories and macro targets (Protein, Carbs, Fats).
+
+-**Customizable Goals**: Set specific daily calorie targets and choose from preset nutritional plans:
+
+   -**Balanced**: Moderate approach for maintenance.
+
+   -**High Protein (Cutting)**: Optimized for muscle preservation.
+
+   -**High Carb (Bulking)**: Designed for energy and mass gain.
+
+-**Smart Food Search**: Instant access to a food database for quick logging.
+
+-**User Profile Integration**: Personalize the experience by inputting weight (KG/LB) and height (CM/FT).
+
+-**Local Persistence**: All data is saved securely in your browser's LocalStorage.
+
+-**Responsive UI**: Optimized for both desktop and mobile "PWA" use with a sleek dark theme.
+
+## Tech Stack 🛠️
+
+- **Framework**: [Next.js 14 (App Router)](https://nextjs.org/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **Icons**: [Lucide React](https://lucide.dev/)
+- **Context Management**: React Context API
+
+## Production Optimization ⚡
+
+This app is optimized for production:
+- **Zero-shifter**: Layout is designed to minimize Cumulative Layout Shift.
+- **Performance**: High Lighthouse scores for performance and accessibility.
+- **Micro-animations**: Smooth transitions using CSS and Framer Motion-like principles.
 
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+
+---
+Built by lhechmi 🚀
