@@ -3,18 +3,34 @@
 A premium, high-performance macro tracking application built with **Next.js 14**, **Tailwind CSS**, and **Lucide Icons**. Track your daily intake of Protein, Carbs, and Fats with a sleek, responsive dashboard.
 
 ### Screenshot
+-**Home Dashboard**
+![image alt]()
 
+-**Goals and Plans**
+![image alt]()
+
+-**Settings**
 ![image alt]()
 
 ## Features ✨
 
-- **Dynamic Dashboard**: Real-time progress rings for calories and macronutrients.
-- **Smart Food Search**: Instant search through a **local JSON food database** for privacy and speed.
-- **Meal Journal**: Track your daily meals and view calculated totals automatically.
-- **Goal Management**: Set custom calorie targets and macro percentage splits.
-- **Local Persistence**: All your data is saved locally in your browser (LocalStorage).
-- **PWA Ready**: Installable on mobile and desktop for a native-like experience.
--**Built In Presets**: Allow you to chose your dietplan with scientific recommendations.
+-**Dynamic Dashboard**: Real-time visualization of remaining calories and macro targets (Protein, Carbs, Fats).
+
+-**Customizable Goals**: Set specific daily calorie targets and choose from preset nutritional plans:
+
+   -**Balanced**: Moderate approach for maintenance.
+
+   -**High Protein (Cutting)**: Optimized for muscle preservation.
+
+   -**High Carb (Bulking)**: Designed for energy and mass gain.
+
+-**Smart Food Search**: Instant access to a food database for quick logging.
+
+-**User Profile Integration**: Personalize the experience by inputting weight (KG/LB) and height (CM/FT).
+
+-**Local Persistence**: All data is saved securely in your browser's LocalStorage.
+
+-**Responsive UI**: Optimized for both desktop and mobile "PWA" use with a sleek dark theme.
 
 ## Tech Stack 🛠️
 
