@@ -111,6 +111,16 @@ export default function App() {
     };
   }, [calorieGoal, proteinPct, carbsPct, fatPct]);
 
+  const filteredFood = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (query === '') return [];
+    
+    return FOOD_DATABASE.filter(f => 
+      f.name.toLowerCase().includes(query) || 
+      f.englishName.toLowerCase().includes(query)
+    ).slice(0, 50);
+  }, [searchQuery]);
+
   const addFood = (food: Food, amount: number, mealType: MealType) => {
     // Calculate actual macros based on amount and type
     let multiplier = 1;
@@ -767,10 +777,6 @@ export default function App() {
           </div>
         );
       case 'add-food':
-        const filteredFood = searchQuery.trim() === '' ? [] : FOOD_DATABASE.filter(f => 
-          f.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-          f.englishName.toLowerCase().includes(searchQuery.toLowerCase())
-        );
         return (
           <div className="p-6 space-y-6 pb-24 text-slate-500 dark:text-slate-400">
             {renderHeader('Add Food')}
