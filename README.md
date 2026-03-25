@@ -5,15 +5,15 @@ A premium, high-performance macro tracking application built with **Next.js 14**
 ### Screenshot
 -**Home Dashboard**
 
-![image alt](https://github.com/mohamedaminebouhachem300-cpu/macro-tracker-app/blob/b6ec76fcd2f57a5eeffc6e54651dd2075bcdf81e/macro1.png)
+![image alt](https://github.com/mohamedaminebouhachem300-cpu/macro-tracker-app/blob/3de09eab9379984ae14dded654ffaa101e9413bd/macro1.jpg)
 
 -**Goals and Plans**
 
-![image alt](https://github.com/mohamedaminebouhachem300-cpu/macro-tracker-app/blob/b6ec76fcd2f57a5eeffc6e54651dd2075bcdf81e/macro2.png)
+![image alt](https://github.com/mohamedaminebouhachem300-cpu/macro-tracker-app/blob/3de09eab9379984ae14dded654ffaa101e9413bd/macro2.jpg)
 
 -**Settings**
 
-![image alt](https://github.com/mohamedaminebouhachem300-cpu/macro-tracker-app/blob/b6ec76fcd2f57a5eeffc6e54651dd2075bcdf81e/macro3.png)
+![image alt](https://github.com/mohamedaminebouhachem300-cpu/macro-tracker-app/blob/3de09eab9379984ae14dded654ffaa101e9413bd/macro3.jpg)
 
 ## Features ✨
 
