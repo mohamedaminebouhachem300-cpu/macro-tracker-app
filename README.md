@@ -2,18 +2,26 @@
 
 A premium, high-performance macro tracking application built with **Next.js 14**, **Tailwind CSS**, and **Lucide Icons**. Track your daily intake of Protein, Carbs, and Fats with a sleek, responsive dashboard.
 
-### Screenshot
--**Home Dashboard**
+### Screenshots
 
-![image alt](https://github.com/mohamedaminebouhachem300-cpu/macro-tracker-app/blob/3de09eab9379984ae14dded654ffaa101e9413bd/macro1.jpg)
-
--**Goals and Plans**
-
-![image alt](https://github.com/mohamedaminebouhachem300-cpu/macro-tracker-app/blob/3de09eab9379984ae14dded654ffaa101e9413bd/macro2.jpg)
-
--**Settings**
-
-![image alt](https://github.com/mohamedaminebouhachem300-cpu/macro-tracker-app/blob/3de09eab9379984ae14dded654ffaa101e9413bd/macro3.jpg)
+<table align="center">
+  <tr>
+    <td align="center"><b>Home Dashboard</b></td>
+    <td align="center"><b>Goals and Plans</b></td>
+    <td align="center"><b>Settings</b></td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="https://github.com/mohamedaminebouhachem300-cpu/macro-tracker-app/blob/3de09eab9379984ae14dded654ffaa101e9413bd/macro1.jpg?raw=true" height="400px" />
+    </td>
+    <td align="center">
+      <img src="https://github.com/mohamedaminebouhachem300-cpu/macro-tracker-app/blob/3de09eab9379984ae14dded654ffaa101e9413bd/macro2.jpg?raw=true" height="400px" />
+    </td>
+    <td align="center">
+      <img src="https://github.com/mohamedaminebouhachem300-cpu/macro-tracker-app/blob/3de09eab9379984ae14dded654ffaa101e9413bd/macro3.jpg?raw=true" height="400px" />
+    </td>
+  </tr>
+</table>
 
 ## Features ✨
 
