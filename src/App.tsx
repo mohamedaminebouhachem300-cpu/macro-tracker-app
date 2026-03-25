@@ -26,6 +26,9 @@ export default function App() {
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [servingsInput, setServingsInput] = useState<number>(1);
   const [selectedMealType, setSelectedMealType] = useState<MealType>('breakfast');
+  const [quickProtein, setQuickProtein] = useState<string>('');
+  const [quickCarbs, setQuickCarbs] = useState<string>('');
+  const [quickFat, setQuickFat] = useState<string>('');
 
   // Load data from localStorage
   useEffect(() => {
@@ -127,6 +130,44 @@ export default function App() {
     setDailyLogs([newLog, ...dailyLogs]);
     setSelectedFood(null);
     setServingsInput(1);
+    setCurrentPage('homepage');
+  };
+
+  const quickAddMacros = () => {
+    const p = parseFloat(quickProtein) || 0;
+    const c = parseFloat(quickCarbs) || 0;
+    const f = parseFloat(quickFat) || 0;
+    
+    if (p === 0 && c === 0 && f === 0) return;
+
+    const calories = (p * 4) + (c * 4) + (f * 9);
+
+    const manualFood: Food = {
+      id: `manual-${Date.now()}`,
+      name: 'Ajout manuel',
+      englishName: 'Quick Add Macros',
+      emoji: '⚡',
+      calories: calories,
+      protein: p,
+      carbs: c,
+      fat: f,
+      servingSize: '1 unit',
+      type: 'unit',
+      weightPerUnit: 1
+    };
+
+    const newLog: LoggedFood = {
+      ...manualFood,
+      logId: Math.random().toString(36).substring(2, 9),
+      timestamp: Date.now(),
+      servings: 1,
+      mealType: selectedMealType,
+    };
+
+    setDailyLogs([newLog, ...dailyLogs]);
+    setQuickProtein('');
+    setQuickCarbs('');
+    setQuickFat('');
     setCurrentPage('homepage');
   };
 
@@ -752,6 +793,73 @@ export default function App() {
                 </button>
               )}
             </div>
+
+            {/* Quick Add Macros Section */}
+            {!searchQuery.trim() && (
+              <div className="bg-natural-card dark:bg-dark-card rounded-3xl p-6 border border-natural-muted dark:border-dark-muted shadow-sm space-y-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <PlusCircle size={18} className="text-natural-accent dark:text-dark-highlight" />
+                  <h2 className="text-sm font-bold text-natural-ink dark:text-white uppercase tracking-wider">Quick Add Macros</h2>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-emerald-500 tracking-widest uppercase">Protein (g)</label>
+                    <input 
+                      type="number" 
+                      placeholder="0"
+                      value={quickProtein}
+                      onChange={(e) => setQuickProtein(e.target.value)}
+                      className="w-full bg-natural-muted dark:bg-dark-accent border-none rounded-xl py-2.5 px-3 text-sm font-bold text-natural-ink dark:text-white focus:ring-2 focus:ring-emerald-500 transition-all"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-amber-500 tracking-widest uppercase">Carbs (g)</label>
+                    <input 
+                      type="number" 
+                      placeholder="0"
+                      value={quickCarbs}
+                      onChange={(e) => setQuickCarbs(e.target.value)}
+                      className="w-full bg-natural-muted dark:bg-dark-accent border-none rounded-xl py-2.5 px-3 text-sm font-bold text-natural-ink dark:text-white focus:ring-2 focus:ring-amber-500 transition-all"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-rose-500 tracking-widest uppercase">Fat (g)</label>
+                    <input 
+                      type="number" 
+                      placeholder="0"
+                      value={quickFat}
+                      onChange={(e) => setQuickFat(e.target.value)}
+                      className="w-full bg-natural-muted dark:bg-dark-accent border-none rounded-xl py-2.5 px-3 text-sm font-bold text-natural-ink dark:text-white focus:ring-2 focus:ring-rose-500 transition-all"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 pt-2">
+                  <div className="flex-1 flex bg-natural-muted dark:bg-dark-accent p-1 rounded-xl">
+                    {(['breakfast', 'lunch', 'dinner', 'snack'] as MealType[]).map((meal) => (
+                      <button
+                        key={meal}
+                        onClick={() => setSelectedMealType(meal)}
+                        className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all capitalize ${
+                          selectedMealType === meal 
+                            ? 'bg-natural-card dark:bg-dark-card text-natural-ink dark:text-white shadow-sm' 
+                            : 'text-natural-accent dark:text-slate-500'
+                        }`}
+                      >
+                        {meal}
+                      </button>
+                    ))}
+                  </div>
+                  <button 
+                    onClick={quickAddMacros}
+                    disabled={!quickProtein && !quickCarbs && !quickFat}
+                    className="bg-natural-ink dark:bg-dark-highlight text-natural-bg dark:text-dark-bg p-2.5 rounded-xl font-bold hover:opacity-90 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <Plus size={20} />
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="space-y-3">
               {searchQuery.trim() === '' && (
                 <div className="text-center py-20 text-slate-400 dark:text-slate-500">
