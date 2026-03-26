@@ -34,7 +34,6 @@ export default function App() {
   const [customCarbs, setCustomCarbs] = useState<string>('');
   const [customFat, setCustomFat] = useState<string>('');
   const [customFoods, setCustomFoods] = useState<Food[]>([]);
-  const [customMealImage, setCustomMealImage] = useState<string | null>(null);
 
   // Load data from localStorage
   useEffect(() => {
@@ -43,6 +42,8 @@ export default function App() {
     const savedProfile = localStorage.getItem('macro_profile');
     const savedTheme = localStorage.getItem('macro_theme');
     const savedCustomFoods = localStorage.getItem('macro_custom_foods');
+    const lastActiveDate = localStorage.getItem('macro_last_active_date');
+    const today = new Date().toLocaleDateString();
     
     if (savedTheme) {
       setIsDarkMode(savedTheme === 'dark');
@@ -69,12 +70,36 @@ export default function App() {
       setCarbsPct(c);
       setFatPct(f);
     }
-    if (savedLogs) {
+
+    // Daily Reset Logic
+    if (lastActiveDate !== today) {
+      // It's a new day! Clear logs.
+      setDailyLogs([]);
+      localStorage.setItem('macro_logs', JSON.stringify([]));
+      localStorage.setItem('macro_last_active_date', today);
+    } else if (savedLogs) {
       setDailyLogs(JSON.parse(savedLogs));
     }
+
+    // Check for day change every minute
+    const interval = setInterval(() => {
+      const currentDay = new Date().toLocaleDateString();
+      const lastSavedDay = localStorage.getItem('macro_last_active_date');
+      if (lastSavedDay && lastSavedDay !== currentDay) {
+        setDailyLogs([]);
+        localStorage.setItem('macro_logs', JSON.stringify([]));
+        localStorage.setItem('macro_last_active_date', currentDay);
+      }
+    }, 60000);
+
+    return () => clearInterval(interval);
   }, []);
 
   // Save data to localStorage
+  useEffect(() => {
+    localStorage.setItem('macro_last_active_date', new Date().toLocaleDateString());
+  }, [dailyLogs]);
+
   useEffect(() => {
     localStorage.setItem('macro_goal', JSON.stringify({ calories: calorieGoal, p: proteinPct, c: carbsPct, f: fatPct }));
   }, [calorieGoal, proteinPct, carbsPct, fatPct]);
@@ -212,8 +237,7 @@ export default function App() {
       id: `custom-${Date.now()}`,
       name: name,
       englishName: name,
-      emoji: customMealImage ? '' : '🍲',
-      imageUrl: customMealImage || undefined,
+      emoji: '🍲',
       calories: calories,
       protein: p,
       carbs: c,
@@ -227,20 +251,8 @@ export default function App() {
     setCustomProtein('');
     setCustomCarbs('');
     setCustomFat('');
-    setCustomMealImage(null);
     
     // No longer logging immediately
-  };
-
-  const handleMealImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setCustomMealImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
   };
 
   const removeLog = (logId: string) => {
@@ -747,13 +759,7 @@ export default function App() {
                   return (
                     <div key={log.logId} className="flex items-center justify-between p-4 bg-natural-card dark:bg-dark-card rounded-2xl border border-natural-muted dark:border-dark-muted hover:shadow-sm transition-all">
                       <div className="flex items-center gap-3">
-                        {log.imageUrl ? (
-                          <div className="w-12 h-12 rounded-xl overflow-hidden shadow-sm border border-natural-muted dark:border-dark-muted flex-shrink-0">
-                            <img src={log.imageUrl} alt={log.englishName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                          </div>
-                        ) : (
-                          <span className="text-2xl w-12 h-12 flex items-center justify-center bg-natural-muted dark:bg-dark-accent rounded-xl flex-shrink-0">{log.emoji}</span>
-                        )}
+                        <span className="text-2xl">{log.emoji}</span>
                         <div>
                           <h3 className="font-medium text-natural-ink dark:text-slate-200">{log.englishName}</h3>
                           <p className="text-xs text-natural-accent dark:text-slate-500">
@@ -807,13 +813,7 @@ export default function App() {
                             className="flex items-center justify-between p-4 bg-natural-card dark:bg-dark-card rounded-2xl border border-natural-muted dark:border-dark-muted shadow-sm"
                           >
                             <div className="flex items-center gap-3 flex-1">
-                              {log.imageUrl ? (
-                                <div className="w-12 h-12 rounded-xl overflow-hidden shadow-sm border border-natural-muted dark:border-dark-muted flex-shrink-0">
-                                  <img src={log.imageUrl} alt={log.englishName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                                </div>
-                              ) : (
-                                <span className="text-2xl w-12 h-12 flex items-center justify-center bg-natural-muted dark:bg-dark-accent rounded-xl flex-shrink-0">{log.emoji}</span>
-                              )}
+                              <span className="text-2xl">{log.emoji}</span>
                               <div className="flex-1">
                                 <h3 className="font-medium text-natural-ink dark:text-dark-ink">{log.englishName}</h3>
                                 <div className="flex gap-3 mt-1">
@@ -946,38 +946,15 @@ export default function App() {
                     <h2 className="text-sm font-bold text-natural-ink dark:text-white uppercase tracking-wider">Add Custom Meal</h2>
                     <p className="text-[10px] text-natural-accent dark:text-slate-500 font-medium">Macros will be saved per 100g</p>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="flex-1 space-y-1.5">
-                      <label className="text-[10px] font-bold text-natural-accent dark:text-slate-400 tracking-widest uppercase">Meal Name</label>
-                      <input 
-                        type="text" 
-                        placeholder="e.g. My Special Salad"
-                        value={customMealName}
-                        onChange={(e) => setCustomMealName(e.target.value)}
-                        className="w-full bg-natural-muted dark:bg-dark-accent border-none rounded-xl py-2.5 px-3 text-sm font-bold text-natural-ink dark:text-white focus:ring-2 focus:ring-natural-accent dark:focus:ring-dark-highlight transition-all"
-                      />
-                    </div>
-                    <div className="flex flex-col items-center gap-1">
-                      <label className="text-[10px] font-bold text-natural-accent dark:text-slate-400 tracking-widest uppercase">Photo</label>
-                      <label className="cursor-pointer relative group">
-                        <input type="file" accept="image/*" className="hidden" onChange={handleMealImageUpload} />
-                        <div className="w-12 h-12 bg-natural-muted dark:bg-dark-accent rounded-xl flex items-center justify-center border-2 border-dashed border-natural-accent/20 dark:border-dark-muted overflow-hidden transition-all group-hover:border-natural-accent dark:group-hover:border-dark-highlight">
-                          {customMealImage ? (
-                            <img src={customMealImage} alt="Meal" className="w-full h-full object-cover" />
-                          ) : (
-                            <Camera size={20} className="text-natural-accent dark:text-slate-500" />
-                          )}
-                        </div>
-                        {customMealImage && (
-                          <button 
-                            onClick={(e) => { e.preventDefault(); setCustomMealImage(null); }}
-                            className="absolute -top-1 -right-1 bg-rose-500 text-white rounded-full p-0.5 shadow-sm"
-                          >
-                            <X size={10} />
-                          </button>
-                        )}
-                      </label>
-                    </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-natural-accent dark:text-slate-400 tracking-widest uppercase">Meal Name</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. My Special Salad"
+                      value={customMealName}
+                      onChange={(e) => setCustomMealName(e.target.value)}
+                      className="w-full bg-natural-muted dark:bg-dark-accent border-none rounded-xl py-2.5 px-3 text-sm font-bold text-natural-ink dark:text-white focus:ring-2 focus:ring-natural-accent dark:focus:ring-dark-highlight transition-all"
+                    />
                   </div>
                   <div className="grid grid-cols-3 gap-3">
                     <div className="space-y-1.5">
@@ -1047,13 +1024,7 @@ export default function App() {
                   className="w-full text-left bg-natural-card dark:bg-dark-card rounded-2xl border border-natural-muted dark:border-dark-muted p-4 flex items-center justify-between shadow-sm hover:border-natural-accent dark:hover:border-dark-highlight transition-all"
                 >
                   <div className="flex items-center gap-3">
-                    {food.imageUrl ? (
-                      <div className="w-12 h-12 rounded-xl overflow-hidden shadow-sm border border-natural-muted dark:border-dark-muted flex-shrink-0">
-                        <img src={food.imageUrl} alt={food.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                      </div>
-                    ) : (
-                      <span className="text-2xl w-12 h-12 flex items-center justify-center bg-natural-muted dark:bg-dark-accent rounded-xl flex-shrink-0">{food.emoji}</span>
-                    )}
+                    <span className="text-2xl">{food.emoji}</span>
                     <div>
                       <h3 className="font-medium text-slate-800 dark:text-white">{food.englishName}</h3>
                       <p className="text-xs text-slate-400 dark:text-slate-500">{food.servingSize} • {food.calories} kcal</p>
@@ -1082,13 +1053,7 @@ export default function App() {
                   >
                     <div className="flex justify-between items-start">
                       <div className="flex items-center gap-4">
-                        {selectedFood.imageUrl ? (
-                          <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-sm border border-natural-muted dark:border-dark-muted flex-shrink-0">
-                            <img src={selectedFood.imageUrl} alt={selectedFood.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                          </div>
-                        ) : (
-                          <span className="text-4xl w-16 h-16 flex items-center justify-center bg-natural-muted dark:bg-dark-accent rounded-2xl flex-shrink-0">{selectedFood.emoji}</span>
-                        )}
+                        <span className="text-4xl">{selectedFood.emoji}</span>
                         <div>
                           <h2 className="text-xl font-bold text-slate-800 dark:text-white">{selectedFood.englishName}</h2>
                           <p className="text-sm text-natural-accent dark:text-dark-highlight">{selectedFood.name}</p>
