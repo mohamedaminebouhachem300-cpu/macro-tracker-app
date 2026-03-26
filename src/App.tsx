@@ -135,10 +135,10 @@ export default function App() {
       }
       
       return {
-        calories: acc.calories + (log.calories * multiplier),
-        protein: acc.protein + (log.protein * multiplier),
-        carbs: acc.carbs + (log.carbs * multiplier),
-        fat: acc.fat + (log.fat * multiplier),
+        calories: acc.calories + ((log.calories || 0) * multiplier),
+        protein: acc.protein + ((log.protein || 0) * multiplier),
+        carbs: acc.carbs + ((log.carbs || 0) * multiplier),
+        fat: acc.fat + ((log.fat || 0) * multiplier),
       };
     }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
   }, [dailyLogs]);
@@ -697,6 +697,7 @@ export default function App() {
                   current: totals.protein, 
                   target: targetMacros.protein, 
                   color: 'text-emerald-500', 
+                  bgColor: 'bg-emerald-500',
                   icon: Beef,
                   left: Math.max(0, Math.round(targetMacros.protein - totals.protein))
                 },
@@ -705,6 +706,7 @@ export default function App() {
                   current: totals.carbs, 
                   target: targetMacros.carbs, 
                   color: 'text-amber-500', 
+                  bgColor: 'bg-amber-500',
                   icon: Wheat,
                   left: Math.max(0, Math.round(targetMacros.carbs - totals.carbs))
                 },
@@ -713,6 +715,7 @@ export default function App() {
                   current: totals.fat, 
                   target: targetMacros.fat, 
                   color: 'text-rose-500', 
+                  bgColor: 'bg-rose-500',
                   icon: Flame,
                   left: Math.max(0, Math.round(targetMacros.fat - totals.fat))
                 },
@@ -725,22 +728,29 @@ export default function App() {
                     <div>
                       <span className={`text-[10px] font-bold tracking-widest ${macro.color} opacity-80`}>{macro.label}</span>
                       <div className="flex items-baseline gap-1 mt-0.5">
-                        <span className="text-2xl font-bold text-natural-ink dark:text-white">{Math.round(macro.current)}</span>
+                        <span className="text-2xl font-bold text-natural-ink dark:text-white">
+                          {macro.current > 0 && macro.current < 10 ? macro.current.toFixed(1) : Math.round(macro.current)}
+                        </span>
                         <span className="text-xs text-natural-accent dark:text-slate-500">/ {macro.target}g</span>
                       </div>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className={`text-sm font-bold ${macro.color}`}>
-                      {macro.left}g left
+                      {macro.left > 0 && macro.left < 10 ? macro.left.toFixed(1) : Math.round(macro.left)}g left
                     </p>
-                    <div className="w-24 bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
-                      <motion.div 
-                        initial={{ width: 0 }}
-                        animate={{ width: `${Math.min((macro.current / macro.target) * 100, 100)}%` }}
-                        className={`h-full rounded-full ${macro.color.replace('text-', 'bg-')}`}
-                      />
-                    </div>
+                      <div className="w-32 bg-slate-200 dark:bg-slate-800 h-2 rounded-full mt-2 overflow-hidden">
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ 
+                            width: `${Math.max(
+                              macro.current > 0 ? 2 : 0, 
+                              Math.min((macro.current / (macro.target || 1)) * 100, 100)
+                            )}%` 
+                          }}
+                          className={`h-full rounded-full ${macro.bgColor}`}
+                        />
+                      </div>
                   </div>
                 </div>
               ))}
