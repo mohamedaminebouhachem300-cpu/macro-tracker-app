@@ -17972,13 +17972,12 @@ export const FOOD_DATABASE: Food[] = [
     "name": "Escalope de dinde",
     "englishName": "Turkey escalope",
     "emoji": "🍗",
-    "calories": 105,
-    "protein": 10.5,
-    "fat": 2.3,
-    "carbs": 15.8,
-    "type": "unit",
-    "servingSize": "1 unit (120g)",
-    "weightPerUnit": 120
+    "calories": 116,
+    "protein": 24,
+    "fat": 2,
+    "carbs": 0.5,
+    "type": "solid",
+    "servingSize": "100g"
   },
   {
     "id": "1472",

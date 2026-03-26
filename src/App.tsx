@@ -29,6 +29,12 @@ export default function App() {
   const [quickProtein, setQuickProtein] = useState<string>('');
   const [quickCarbs, setQuickCarbs] = useState<string>('');
   const [quickFat, setQuickFat] = useState<string>('');
+  const [customMealName, setCustomMealName] = useState<string>('');
+  const [customProtein, setCustomProtein] = useState<string>('');
+  const [customCarbs, setCustomCarbs] = useState<string>('');
+  const [customFat, setCustomFat] = useState<string>('');
+  const [customFoods, setCustomFoods] = useState<Food[]>([]);
+  const [customMealImage, setCustomMealImage] = useState<string | null>(null);
 
   // Load data from localStorage
   useEffect(() => {
@@ -36,9 +42,14 @@ export default function App() {
     const savedLogs = localStorage.getItem('macro_logs');
     const savedProfile = localStorage.getItem('macro_profile');
     const savedTheme = localStorage.getItem('macro_theme');
+    const savedCustomFoods = localStorage.getItem('macro_custom_foods');
     
     if (savedTheme) {
       setIsDarkMode(savedTheme === 'dark');
+    }
+
+    if (savedCustomFoods) {
+      setCustomFoods(JSON.parse(savedCustomFoods));
     }
     
     if (savedProfile) {
@@ -75,6 +86,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('macro_logs', JSON.stringify(dailyLogs));
   }, [dailyLogs]);
+
+  useEffect(() => {
+    localStorage.setItem('macro_custom_foods', JSON.stringify(customFoods));
+  }, [customFoods]);
 
   useEffect(() => {
     localStorage.setItem('macro_theme', isDarkMode ? 'dark' : 'light');
@@ -115,11 +130,13 @@ export default function App() {
     const query = searchQuery.trim().toLowerCase();
     if (query === '') return [];
     
-    return FOOD_DATABASE.filter(f => 
+    const combinedDatabase = [...customFoods, ...FOOD_DATABASE];
+    
+    return combinedDatabase.filter(f => 
       f.name.toLowerCase().includes(query) || 
       f.englishName.toLowerCase().includes(query)
     ).slice(0, 50);
-  }, [searchQuery]);
+  }, [searchQuery, customFoods]);
 
   const addFood = (food: Food, amount: number, mealType: MealType) => {
     // Calculate actual macros based on amount and type
@@ -179,6 +196,51 @@ export default function App() {
     setQuickCarbs('');
     setQuickFat('');
     setCurrentPage('homepage');
+  };
+
+  const addCustomMeal = () => {
+    const p = parseFloat(customProtein) || 0;
+    const c = parseFloat(customCarbs) || 0;
+    const f = parseFloat(customFat) || 0;
+    const name = customMealName.trim();
+    
+    if (!name || (p === 0 && c === 0 && f === 0)) return;
+
+    const calories = (p * 4) + (c * 4) + (f * 9);
+
+    const newCustomFood: Food = {
+      id: `custom-${Date.now()}`,
+      name: name,
+      englishName: name,
+      emoji: customMealImage ? '' : '🍲',
+      imageUrl: customMealImage || undefined,
+      calories: calories,
+      protein: p,
+      carbs: c,
+      fat: f,
+      servingSize: '100g',
+      type: 'solid'
+    };
+
+    setCustomFoods([newCustomFood, ...customFoods]);
+    setCustomMealName('');
+    setCustomProtein('');
+    setCustomCarbs('');
+    setCustomFat('');
+    setCustomMealImage(null);
+    
+    // No longer logging immediately
+  };
+
+  const handleMealImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCustomMealImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const removeLog = (logId: string) => {
@@ -685,7 +747,13 @@ export default function App() {
                   return (
                     <div key={log.logId} className="flex items-center justify-between p-4 bg-natural-card dark:bg-dark-card rounded-2xl border border-natural-muted dark:border-dark-muted hover:shadow-sm transition-all">
                       <div className="flex items-center gap-3">
-                        <span className="text-2xl">{log.emoji}</span>
+                        {log.imageUrl ? (
+                          <div className="w-12 h-12 rounded-xl overflow-hidden shadow-sm border border-natural-muted dark:border-dark-muted flex-shrink-0">
+                            <img src={log.imageUrl} alt={log.englishName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                          </div>
+                        ) : (
+                          <span className="text-2xl w-12 h-12 flex items-center justify-center bg-natural-muted dark:bg-dark-accent rounded-xl flex-shrink-0">{log.emoji}</span>
+                        )}
                         <div>
                           <h3 className="font-medium text-natural-ink dark:text-slate-200">{log.englishName}</h3>
                           <p className="text-xs text-natural-accent dark:text-slate-500">
@@ -739,7 +807,13 @@ export default function App() {
                             className="flex items-center justify-between p-4 bg-natural-card dark:bg-dark-card rounded-2xl border border-natural-muted dark:border-dark-muted shadow-sm"
                           >
                             <div className="flex items-center gap-3 flex-1">
-                              <span className="text-2xl">{log.emoji}</span>
+                              {log.imageUrl ? (
+                                <div className="w-12 h-12 rounded-xl overflow-hidden shadow-sm border border-natural-muted dark:border-dark-muted flex-shrink-0">
+                                  <img src={log.imageUrl} alt={log.englishName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                </div>
+                              ) : (
+                                <span className="text-2xl w-12 h-12 flex items-center justify-center bg-natural-muted dark:bg-dark-accent rounded-xl flex-shrink-0">{log.emoji}</span>
+                              )}
                               <div className="flex-1">
                                 <h3 className="font-medium text-natural-ink dark:text-dark-ink">{log.englishName}</h3>
                                 <div className="flex gap-3 mt-1">
@@ -802,66 +876,151 @@ export default function App() {
 
             {/* Quick Add Macros Section */}
             {!searchQuery.trim() && (
-              <div className="bg-natural-card dark:bg-dark-card rounded-3xl p-6 border border-natural-muted dark:border-dark-muted shadow-sm space-y-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <PlusCircle size={18} className="text-natural-accent dark:text-dark-highlight" />
-                  <h2 className="text-sm font-bold text-natural-ink dark:text-white uppercase tracking-wider">Quick Add Macros</h2>
+              <div className="space-y-6">
+                <div className="bg-natural-card dark:bg-dark-card rounded-3xl p-6 border border-natural-muted dark:border-dark-muted shadow-sm space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <PlusCircle size={18} className="text-natural-accent dark:text-dark-highlight" />
+                    <h2 className="text-sm font-bold text-natural-ink dark:text-white uppercase tracking-wider">Quick Add Macros</h2>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-emerald-500 tracking-widest uppercase">Protein (g)</label>
+                      <input 
+                        type="number" 
+                        placeholder="0"
+                        value={quickProtein}
+                        onChange={(e) => setQuickProtein(e.target.value)}
+                        className="w-full bg-natural-muted dark:bg-dark-accent border-none rounded-xl py-2.5 px-3 text-sm font-bold text-natural-ink dark:text-white focus:ring-2 focus:ring-emerald-500 transition-all"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-amber-500 tracking-widest uppercase">Carbs (g)</label>
+                      <input 
+                        type="number" 
+                        placeholder="0"
+                        value={quickCarbs}
+                        onChange={(e) => setQuickCarbs(e.target.value)}
+                        className="w-full bg-natural-muted dark:bg-dark-accent border-none rounded-xl py-2.5 px-3 text-sm font-bold text-natural-ink dark:text-white focus:ring-2 focus:ring-amber-500 transition-all"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-rose-500 tracking-widest uppercase">Fat (g)</label>
+                      <input 
+                        type="number" 
+                        placeholder="0"
+                        value={quickFat}
+                        onChange={(e) => setQuickFat(e.target.value)}
+                        className="w-full bg-natural-muted dark:bg-dark-accent border-none rounded-xl py-2.5 px-3 text-sm font-bold text-natural-ink dark:text-white focus:ring-2 focus:ring-rose-500 transition-all"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 pt-2">
+                    <div className="flex-1 flex bg-natural-muted dark:bg-dark-accent p-1 rounded-xl">
+                      {(['breakfast', 'lunch', 'dinner', 'snack'] as MealType[]).map((meal) => (
+                        <button
+                          key={meal}
+                          onClick={() => setSelectedMealType(meal)}
+                          className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all capitalize ${
+                            selectedMealType === meal 
+                              ? 'bg-natural-card dark:bg-dark-card text-natural-ink dark:text-white shadow-sm' 
+                              : 'text-natural-accent dark:text-slate-500'
+                          }`}
+                        >
+                          {meal}
+                        </button>
+                      ))}
+                    </div>
+                    <button 
+                      onClick={quickAddMacros}
+                      disabled={!quickProtein && !quickCarbs && !quickFat}
+                      className="bg-natural-ink dark:bg-dark-highlight text-natural-bg dark:text-dark-bg p-2.5 rounded-xl font-bold hover:opacity-90 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <Plus size={20} />
+                    </button>
+                  </div>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-emerald-500 tracking-widest uppercase">Protein (g)</label>
-                    <input 
-                      type="number" 
-                      placeholder="0"
-                      value={quickProtein}
-                      onChange={(e) => setQuickProtein(e.target.value)}
-                      className="w-full bg-natural-muted dark:bg-dark-accent border-none rounded-xl py-2.5 px-3 text-sm font-bold text-natural-ink dark:text-white focus:ring-2 focus:ring-emerald-500 transition-all"
-                    />
+
+                <div className="bg-natural-card dark:bg-dark-card rounded-3xl p-6 border border-natural-muted dark:border-dark-muted shadow-sm space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <PlusCircle size={18} className="text-natural-accent dark:text-dark-highlight" />
+                    <h2 className="text-sm font-bold text-natural-ink dark:text-white uppercase tracking-wider">Add Custom Meal</h2>
+                    <p className="text-[10px] text-natural-accent dark:text-slate-500 font-medium">Macros will be saved per 100g</p>
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-amber-500 tracking-widest uppercase">Carbs (g)</label>
-                    <input 
-                      type="number" 
-                      placeholder="0"
-                      value={quickCarbs}
-                      onChange={(e) => setQuickCarbs(e.target.value)}
-                      className="w-full bg-natural-muted dark:bg-dark-accent border-none rounded-xl py-2.5 px-3 text-sm font-bold text-natural-ink dark:text-white focus:ring-2 focus:ring-amber-500 transition-all"
-                    />
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1 space-y-1.5">
+                      <label className="text-[10px] font-bold text-natural-accent dark:text-slate-400 tracking-widest uppercase">Meal Name</label>
+                      <input 
+                        type="text" 
+                        placeholder="e.g. My Special Salad"
+                        value={customMealName}
+                        onChange={(e) => setCustomMealName(e.target.value)}
+                        className="w-full bg-natural-muted dark:bg-dark-accent border-none rounded-xl py-2.5 px-3 text-sm font-bold text-natural-ink dark:text-white focus:ring-2 focus:ring-natural-accent dark:focus:ring-dark-highlight transition-all"
+                      />
+                    </div>
+                    <div className="flex flex-col items-center gap-1">
+                      <label className="text-[10px] font-bold text-natural-accent dark:text-slate-400 tracking-widest uppercase">Photo</label>
+                      <label className="cursor-pointer relative group">
+                        <input type="file" accept="image/*" className="hidden" onChange={handleMealImageUpload} />
+                        <div className="w-12 h-12 bg-natural-muted dark:bg-dark-accent rounded-xl flex items-center justify-center border-2 border-dashed border-natural-accent/20 dark:border-dark-muted overflow-hidden transition-all group-hover:border-natural-accent dark:group-hover:border-dark-highlight">
+                          {customMealImage ? (
+                            <img src={customMealImage} alt="Meal" className="w-full h-full object-cover" />
+                          ) : (
+                            <Camera size={20} className="text-natural-accent dark:text-slate-500" />
+                          )}
+                        </div>
+                        {customMealImage && (
+                          <button 
+                            onClick={(e) => { e.preventDefault(); setCustomMealImage(null); }}
+                            className="absolute -top-1 -right-1 bg-rose-500 text-white rounded-full p-0.5 shadow-sm"
+                          >
+                            <X size={10} />
+                          </button>
+                        )}
+                      </label>
+                    </div>
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-rose-500 tracking-widest uppercase">Fat (g)</label>
-                    <input 
-                      type="number" 
-                      placeholder="0"
-                      value={quickFat}
-                      onChange={(e) => setQuickFat(e.target.value)}
-                      className="w-full bg-natural-muted dark:bg-dark-accent border-none rounded-xl py-2.5 px-3 text-sm font-bold text-natural-ink dark:text-white focus:ring-2 focus:ring-rose-500 transition-all"
-                    />
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-emerald-500 tracking-widest uppercase">Protein (g)</label>
+                      <input 
+                        type="number" 
+                        placeholder="0"
+                        value={customProtein}
+                        onChange={(e) => setCustomProtein(e.target.value)}
+                        className="w-full bg-natural-muted dark:bg-dark-accent border-none rounded-xl py-2.5 px-3 text-sm font-bold text-natural-ink dark:text-white focus:ring-2 focus:ring-emerald-500 transition-all"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-amber-500 tracking-widest uppercase">Carbs (g)</label>
+                      <input 
+                        type="number" 
+                        placeholder="0"
+                        value={customCarbs}
+                        onChange={(e) => setCustomCarbs(e.target.value)}
+                        className="w-full bg-natural-muted dark:bg-dark-accent border-none rounded-xl py-2.5 px-3 text-sm font-bold text-natural-ink dark:text-white focus:ring-2 focus:ring-amber-500 transition-all"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-rose-500 tracking-widest uppercase">Fat (g)</label>
+                      <input 
+                        type="number" 
+                        placeholder="0"
+                        value={customFat}
+                        onChange={(e) => setCustomFat(e.target.value)}
+                        className="w-full bg-natural-muted dark:bg-dark-accent border-none rounded-xl py-2.5 px-3 text-sm font-bold text-natural-ink dark:text-white focus:ring-2 focus:ring-rose-500 transition-all"
+                      />
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-3 pt-2">
-                  <div className="flex-1 flex bg-natural-muted dark:bg-dark-accent p-1 rounded-xl">
-                    {(['breakfast', 'lunch', 'dinner', 'snack'] as MealType[]).map((meal) => (
-                      <button
-                        key={meal}
-                        onClick={() => setSelectedMealType(meal)}
-                        className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all capitalize ${
-                          selectedMealType === meal 
-                            ? 'bg-natural-card dark:bg-dark-card text-natural-ink dark:text-white shadow-sm' 
-                            : 'text-natural-accent dark:text-slate-500'
-                        }`}
-                      >
-                        {meal}
-                      </button>
-                    ))}
+                  <div className="flex items-center gap-3 pt-2">
+                    <button 
+                      onClick={addCustomMeal}
+                      disabled={!customMealName || (!customProtein && !customCarbs && !customFat)}
+                      className="w-full bg-natural-ink dark:bg-dark-highlight text-natural-bg dark:text-dark-bg py-3 rounded-xl font-bold hover:opacity-90 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      <Plus size={20} />
+                      <span>Save to Database</span>
+                    </button>
                   </div>
-                  <button 
-                    onClick={quickAddMacros}
-                    disabled={!quickProtein && !quickCarbs && !quickFat}
-                    className="bg-natural-ink dark:bg-dark-highlight text-natural-bg dark:text-dark-bg p-2.5 rounded-xl font-bold hover:opacity-90 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <Plus size={20} />
-                  </button>
                 </div>
               </div>
             )}
@@ -888,7 +1047,13 @@ export default function App() {
                   className="w-full text-left bg-natural-card dark:bg-dark-card rounded-2xl border border-natural-muted dark:border-dark-muted p-4 flex items-center justify-between shadow-sm hover:border-natural-accent dark:hover:border-dark-highlight transition-all"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl">{food.emoji}</span>
+                    {food.imageUrl ? (
+                      <div className="w-12 h-12 rounded-xl overflow-hidden shadow-sm border border-natural-muted dark:border-dark-muted flex-shrink-0">
+                        <img src={food.imageUrl} alt={food.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      </div>
+                    ) : (
+                      <span className="text-2xl w-12 h-12 flex items-center justify-center bg-natural-muted dark:bg-dark-accent rounded-xl flex-shrink-0">{food.emoji}</span>
+                    )}
                     <div>
                       <h3 className="font-medium text-slate-800 dark:text-white">{food.englishName}</h3>
                       <p className="text-xs text-slate-400 dark:text-slate-500">{food.servingSize} • {food.calories} kcal</p>
@@ -917,7 +1082,13 @@ export default function App() {
                   >
                     <div className="flex justify-between items-start">
                       <div className="flex items-center gap-4">
-                        <span className="text-4xl">{selectedFood.emoji}</span>
+                        {selectedFood.imageUrl ? (
+                          <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-sm border border-natural-muted dark:border-dark-muted flex-shrink-0">
+                            <img src={selectedFood.imageUrl} alt={selectedFood.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                          </div>
+                        ) : (
+                          <span className="text-4xl w-16 h-16 flex items-center justify-center bg-natural-muted dark:bg-dark-accent rounded-2xl flex-shrink-0">{selectedFood.emoji}</span>
+                        )}
                         <div>
                           <h2 className="text-xl font-bold text-slate-800 dark:text-white">{selectedFood.englishName}</h2>
                           <p className="text-sm text-natural-accent dark:text-dark-highlight">{selectedFood.name}</p>

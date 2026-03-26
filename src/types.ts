@@ -20,6 +20,7 @@ export interface Food {
   name: string;
   englishName: string;
   emoji: string;
+  imageUrl?: string;
   calories: number; // kcal per 100g/ml or per unit
   protein: number;
   carbs: number;
