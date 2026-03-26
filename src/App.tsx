@@ -34,6 +34,9 @@ export default function App() {
   const [customCarbs, setCustomCarbs] = useState<string>('');
   const [customFat, setCustomFat] = useState<string>('');
   const [customFoods, setCustomFoods] = useState<Food[]>([]);
+  const [isCreatingRecipe, setIsCreatingRecipe] = useState(false);
+  const [recipeName, setRecipeName] = useState('');
+  const [recipeIngredients, setRecipeIngredients] = useState<{ food: Food; amount: number }[]>([]);
 
   // Load data from localStorage
   useEffect(() => {
@@ -253,6 +256,64 @@ export default function App() {
     setCustomFat('');
     
     // No longer logging immediately
+  };
+
+  const addIngredientToRecipe = (food: Food, amount: number) => {
+    setRecipeIngredients([...recipeIngredients, { food, amount }]);
+    setSelectedFood(null);
+    setServingsInput(1);
+  };
+
+  const removeIngredientFromRecipe = (index: number) => {
+    setRecipeIngredients(recipeIngredients.filter((_, i) => i !== index));
+  };
+
+  const saveRecipe = () => {
+    if (!recipeName.trim() || recipeIngredients.length === 0) return;
+
+    let totalProtein = 0;
+    let totalCarbs = 0;
+    let totalFat = 0;
+    let totalCalories = 0;
+    let totalWeight = 0;
+
+    recipeIngredients.forEach(({ food, amount }) => {
+      let multiplier = 1;
+      if (food.type === 'unit') {
+        multiplier = amount;
+        totalWeight += (food.weightPerUnit || 100) * amount;
+      } else {
+        multiplier = amount / 100;
+        totalWeight += amount;
+      }
+      totalProtein += food.protein * multiplier;
+      totalCarbs += food.carbs * multiplier;
+      totalFat += food.fat * multiplier;
+      totalCalories += food.calories * multiplier;
+    });
+
+    const factor = 100 / totalWeight;
+    const newRecipe: Food = {
+      id: `recipe-${Date.now()}`,
+      name: recipeName,
+      englishName: recipeName,
+      emoji: '🥗',
+      calories: Math.round(totalCalories * factor),
+      protein: parseFloat((totalProtein * factor).toFixed(1)),
+      carbs: parseFloat((totalCarbs * factor).toFixed(1)),
+      fat: parseFloat((totalFat * factor).toFixed(1)),
+      servingSize: '100g',
+      type: 'solid'
+    };
+
+    const updatedCustomFoods = [newRecipe, ...customFoods];
+    setCustomFoods(updatedCustomFoods);
+    localStorage.setItem('macro_custom_foods', JSON.stringify(updatedCustomFoods));
+    
+    setRecipeName('');
+    setRecipeIngredients([]);
+    setIsCreatingRecipe(false);
+    setSearchQuery('');
   };
 
   const removeLog = (logId: string) => {
@@ -1009,6 +1070,91 @@ export default function App() {
                     </button>
                   </div>
                 </div>
+
+                <div className="bg-natural-card dark:bg-dark-card rounded-3xl p-6 border border-natural-muted dark:border-dark-muted shadow-sm space-y-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <PlusCircle size={18} className="text-natural-accent dark:text-dark-highlight" />
+                      <h2 className="text-sm font-bold text-natural-ink dark:text-white uppercase tracking-wider">Create Custom Recipe</h2>
+                    </div>
+                    {!isCreatingRecipe && (
+                      <button 
+                        onClick={() => setIsCreatingRecipe(true)}
+                        className="text-[10px] font-bold text-natural-accent dark:text-dark-highlight uppercase tracking-widest hover:bg-natural-accent/10 dark:hover:bg-dark-highlight/10 transition-all border border-natural-accent/30 dark:border-dark-highlight/30 px-3 py-1.5 rounded-xl"
+                      >
+                        Start New
+                      </button>
+                    )}
+                  </div>
+
+                  {isCreatingRecipe ? (
+                    <div className="space-y-4">
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-bold text-natural-accent dark:text-slate-400 tracking-widest uppercase">Recipe Name</label>
+                        <input 
+                          type="text" 
+                          placeholder="e.g. Grandma's Lasagna"
+                          value={recipeName}
+                          onChange={(e) => setRecipeName(e.target.value)}
+                          className="w-full bg-natural-muted dark:bg-dark-accent border-none rounded-xl py-2.5 px-3 text-sm font-bold text-natural-ink dark:text-white focus:ring-2 focus:ring-natural-accent dark:focus:ring-dark-highlight transition-all"
+                        />
+                      </div>
+
+                      {recipeIngredients.length > 0 && (
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold text-natural-accent dark:text-slate-400 tracking-widest uppercase">Ingredients</label>
+                          <div className="space-y-2">
+                            {recipeIngredients.map((ingredient, idx) => (
+                              <div key={idx} className="flex items-center justify-between bg-natural-muted dark:bg-dark-accent p-3 rounded-xl">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-lg">{ingredient.food.emoji}</span>
+                                  <div>
+                                    <p className="text-xs font-bold text-natural-ink dark:text-white">{ingredient.food.englishName}</p>
+                                    <p className="text-[10px] text-natural-accent dark:text-slate-500">{ingredient.amount}{ingredient.food.type === 'unit' ? ' units' : 'g'}</p>
+                                  </div>
+                                </div>
+                                <button 
+                                  onClick={() => removeIngredientFromRecipe(idx)}
+                                  className="text-rose-500 hover:opacity-80 p-1"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex gap-3 pt-2">
+                        <button 
+                          onClick={() => {
+                            setIsCreatingRecipe(false);
+                            setRecipeName('');
+                            setRecipeIngredients([]);
+                          }}
+                          className="flex-1 bg-natural-muted dark:bg-dark-accent text-natural-accent dark:text-slate-400 py-3 rounded-xl font-bold hover:opacity-90 transition-all"
+                        >
+                          Cancel
+                        </button>
+                        <button 
+                          onClick={saveRecipe}
+                          disabled={!recipeName.trim() || recipeIngredients.length === 0}
+                          className="flex-[2] bg-natural-ink dark:bg-dark-highlight text-natural-bg dark:text-dark-bg py-3 rounded-xl font-bold hover:opacity-90 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                          <Check size={20} />
+                          <span>Save Recipe</span>
+                        </button>
+                      </div>
+                      <p className="text-[10px] text-center text-natural-accent dark:text-slate-500 italic">
+                        Search for food below to add ingredients
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-natural-accent dark:text-slate-500">
+                      Combine multiple food items to create a searchable recipe with auto-calculated macros.
+                    </p>
+                  )}
+                </div>
               </div>
             )}
 
@@ -1075,24 +1221,26 @@ export default function App() {
                     </div>
 
                     <div className="space-y-4">
-                      <div className="space-y-2">
-                        <span className="text-sm font-medium text-natural-accent dark:text-dark-highlight">Select Meal</span>
-                        <div className="grid grid-cols-4 gap-2">
-                          {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map((meal) => (
-                            <button
-                              key={meal}
-                              onClick={() => setSelectedMealType(meal)}
-                              className={`py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all border ${
-                                selectedMealType === meal 
-                                  ? 'bg-natural-ink dark:bg-dark-highlight text-natural-bg dark:text-dark-bg border-natural-ink dark:border-dark-highlight' 
-                                  : 'bg-natural-muted dark:bg-dark-accent text-natural-accent dark:text-dark-highlight border-natural-muted dark:border-dark-muted hover:border-natural-accent dark:hover:border-dark-highlight'
-                              }`}
-                            >
-                              {meal}
-                            </button>
-                          ))}
+                      {!isCreatingRecipe && (
+                        <div className="space-y-2">
+                          <span className="text-sm font-medium text-natural-accent dark:text-dark-highlight">Select Meal</span>
+                          <div className="grid grid-cols-4 gap-2">
+                            {(['breakfast', 'lunch', 'dinner', 'snack'] as const).map((meal) => (
+                              <button
+                                key={meal}
+                                onClick={() => setSelectedMealType(meal)}
+                                className={`py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all border ${
+                                  selectedMealType === meal 
+                                    ? 'bg-natural-ink dark:bg-dark-highlight text-natural-bg dark:text-dark-bg border-natural-ink dark:border-dark-highlight' 
+                                    : 'bg-natural-muted dark:bg-dark-accent text-natural-accent dark:text-dark-highlight border-natural-muted dark:border-dark-muted hover:border-natural-accent dark:hover:border-dark-highlight'
+                                }`}
+                              >
+                                {meal}
+                              </button>
+                            ))}
+                          </div>
                         </div>
-                      </div>
+                      )}
 
                       <div className="flex justify-between items-center">
                         <span className="font-medium text-natural-accent dark:text-dark-highlight">Amount ({selectedFood.type === 'unit' ? 'units' : selectedFood.type === 'liquid' ? 'ml' : 'g'})</span>
@@ -1134,10 +1282,16 @@ export default function App() {
                     </div>
 
                     <button 
-                      onClick={() => addFood(selectedFood, servingsInput, selectedMealType)}
+                      onClick={() => {
+                        if (isCreatingRecipe) {
+                          addIngredientToRecipe(selectedFood, servingsInput);
+                        } else {
+                          addFood(selectedFood, servingsInput, selectedMealType);
+                        }
+                      }}
                       className="w-full bg-natural-ink dark:bg-dark-highlight text-natural-bg dark:text-dark-bg py-4 rounded-2xl font-bold text-lg hover:opacity-90 transition-all shadow-lg shadow-natural-muted dark:shadow-none"
                     >
-                      Add to Log
+                      {isCreatingRecipe ? 'Add to Recipe' : 'Add to Log'}
                     </button>
                   </motion.div>
                 </div>
