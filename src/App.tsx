@@ -2,13 +2,85 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Home, Target, PlusCircle, Calendar, ChevronRight, Search, Trash2, Plus, Minus, Settings, User, ArrowRight, Check, Camera, Moon, Sun, Beef, Wheat, Flame, X, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Page, Food, LoggedFood, DIET_PLANS, DietPlan, MealType, UserProfile, GoalType } from './types';
-import { FOOD_DATABASE } from './foodDatabase';
+import { FOOD_DATABASE as STATIC_FOOD_DATABASE } from './foodDatabase';
 import { translations } from './translations';
+
+// Memoized sub-components for performance
+const MacroCard = React.memo(({ macro, translations, language }: any) => (
+  <div className="bg-natural-card dark:bg-[#1a2332] rounded-[32px] p-6 shadow-sm border border-natural-muted dark:border-dark-muted flex justify-between items-center">
+    <div className="flex items-center gap-4">
+      <div className={`p-3 rounded-2xl ${macro.color.replace('text-', 'bg-')}/10`}>
+        <macro.icon size={24} className={macro.color} />
+      </div>
+      <div>
+        <span className={`text-[10px] font-bold tracking-widest ${macro.color} opacity-80`}>{macro.label}</span>
+        <div className="flex items-baseline gap-1 mt-0.5">
+          <span className="text-2xl font-bold text-natural-ink dark:text-white">
+            {macro.current > 0 && macro.current < 10 ? macro.current.toFixed(1) : Math.round(macro.current)}
+          </span>
+          <span className="text-xs text-natural-accent dark:text-slate-500">/ {macro.target}g</span>
+        </div>
+      </div>
+    </div>
+    <div className="text-right">
+      <p className={`text-sm font-bold ${macro.color}`}>
+        {macro.left > 0 && macro.left < 10 ? macro.left.toFixed(1) : Math.round(macro.left)}g {translations[language].left}
+      </p>
+      <div className="w-32 bg-slate-200 dark:bg-slate-800 h-2 rounded-full mt-2 overflow-hidden">
+        <motion.div 
+          initial={{ width: 0 }}
+          animate={{ 
+            width: `${Math.max(
+              macro.current > 0 ? 2 : 0, 
+              Math.min((macro.current / (macro.target || 1)) * 100, 100)
+            )}%` 
+          }}
+          className={`h-full rounded-full ${macro.bgColor}`}
+        />
+      </div>
+    </div>
+  </div>
+));
+
+const FoodItem = React.memo(({ food, onClick, translations, language }: any) => (
+  <button 
+    onClick={onClick}
+    className="w-full text-left bg-natural-card dark:bg-dark-card rounded-2xl border border-natural-muted dark:border-dark-muted p-4 flex items-center justify-between shadow-sm hover:border-natural-accent dark:hover:border-dark-highlight transition-all"
+  >
+    <div className="flex items-center gap-3">
+      <span className="text-2xl">{food.emoji}</span>
+      <div>
+        <h3 className="font-medium text-slate-800 dark:text-white">{food.englishName}</h3>
+        <p className="text-xs text-slate-400 dark:text-slate-500">{food.servingSize} • {food.calories} kcal</p>
+        <div className="flex gap-2 mt-1 text-[10px] font-mono text-slate-400 dark:text-slate-500">
+          <span>P: {food.protein}g</span>
+          <span>C: {food.carbs}g</span>
+          <span>F: {food.fat}g</span>
+        </div>
+      </div>
+    </div>
+    <div className="bg-natural-muted dark:bg-dark-muted p-2 rounded-xl text-slate-400 dark:text-slate-500">
+      <Plus size={20} />
+    </div>
+  </button>
+));
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>('homepage');
   const [onboardingStep, setOnboardingStep] = useState(1);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [foodDatabase, setFoodDatabase] = useState<Food[]>([]);
+  const [isDbLoading, setIsDbLoading] = useState(true);
+
+  // Load food database asynchronously to improve initial load time
+  useEffect(() => {
+    // We use a small delay to prioritize initial UI rendering
+    const timer = setTimeout(() => {
+      setFoodDatabase(STATIC_FOOD_DATABASE);
+      setIsDbLoading(false);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
   const [userProfile, setUserProfile] = useState<UserProfile>({
     name: '',
     photoUrl: '',
@@ -30,6 +102,18 @@ export default function App() {
   const [fatPct, setFatPct] = useState(30);
   const [dailyLogs, setDailyLogs] = useState<LoggedFood[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+
+  // Debounce search query
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setSearchQuery(searchInput);
+    }, 300);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchInput]);
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [servingsInput, setServingsInput] = useState<number>(1);
   const [selectedMealType, setSelectedMealType] = useState<MealType>('breakfast');
@@ -172,17 +256,19 @@ export default function App() {
     };
   }, [calorieGoal, proteinPct, carbsPct, fatPct]);
 
+  const combinedDatabase = useMemo(() => {
+    return [...customFoods, ...foodDatabase];
+  }, [customFoods, foodDatabase]);
+
   const filteredFood = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-    if (query === '') return [];
-    
-    const combinedDatabase = [...customFoods, ...FOOD_DATABASE];
+    if (query.length < 2) return [];
     
     return combinedDatabase.filter(f => 
       f.name.toLowerCase().includes(query) || 
       f.englishName.toLowerCase().includes(query)
     ).slice(0, 50);
-  }, [searchQuery, customFoods]);
+  }, [searchQuery, combinedDatabase]);
 
   const addFood = (food: Food, amount: number, mealType: MealType) => {
     // Calculate actual macros based on amount and type
@@ -1051,39 +1137,12 @@ export default function App() {
                   left: Math.max(0, Math.round(targetMacros.fat - totals.fat))
                 },
               ].map((macro) => (
-                <div key={macro.label} className="bg-natural-card dark:bg-[#1a2332] rounded-[32px] p-6 shadow-sm border border-natural-muted dark:border-dark-muted flex justify-between items-center">
-                  <div className="flex items-center gap-4">
-                    <div className={`p-3 rounded-2xl ${macro.color.replace('text-', 'bg-')}/10`}>
-                      <macro.icon size={24} className={macro.color} />
-                    </div>
-                    <div>
-                      <span className={`text-[10px] font-bold tracking-widest ${macro.color} opacity-80`}>{macro.label}</span>
-                      <div className="flex items-baseline gap-1 mt-0.5">
-                        <span className="text-2xl font-bold text-natural-ink dark:text-white">
-                          {macro.current > 0 && macro.current < 10 ? macro.current.toFixed(1) : Math.round(macro.current)}
-                        </span>
-                        <span className="text-xs text-natural-accent dark:text-slate-500">/ {macro.target}g</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className={`text-sm font-bold ${macro.color}`}>
-                      {macro.left > 0 && macro.left < 10 ? macro.left.toFixed(1) : Math.round(macro.left)}g {translations[userProfile.language].left}
-                    </p>
-                      <div className="w-32 bg-slate-200 dark:bg-slate-800 h-2 rounded-full mt-2 overflow-hidden">
-                        <motion.div 
-                          initial={{ width: 0 }}
-                          animate={{ 
-                            width: `${Math.max(
-                              macro.current > 0 ? 2 : 0, 
-                              Math.min((macro.current / (macro.target || 1)) * 100, 100)
-                            )}%` 
-                          }}
-                          className={`h-full rounded-full ${macro.bgColor}`}
-                        />
-                      </div>
-                  </div>
-                </div>
+                <MacroCard 
+                  key={macro.label} 
+                  macro={macro} 
+                  translations={translations} 
+                  language={userProfile.language} 
+                />
               ))}
             </div>
 
@@ -1201,12 +1260,12 @@ export default function App() {
                 type="text"
                 placeholder={translations[userProfile.language].searchDatabase}
                 className="w-full bg-natural-muted dark:bg-dark-accent border-none rounded-2xl py-3 pl-10 pr-10 focus:ring-2 focus:ring-natural-accent dark:focus:ring-dark-highlight transition-all text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
               />
-              {searchQuery && (
+              {searchInput && (
                 <button 
-                  onClick={() => setSearchQuery('')}
+                  onClick={() => setSearchInput('')}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-natural-accent dark:hover:text-dark-highlight transition-colors"
                   aria-label="Clear search"
                 >
@@ -1216,7 +1275,7 @@ export default function App() {
             </div>
 
             {/* Quick Add Macros Section */}
-            {!searchQuery.trim() && (
+            {!searchInput.trim() && (
               <div className="space-y-6">
                 <div className="bg-natural-card dark:bg-dark-card rounded-3xl p-6 border border-natural-muted dark:border-dark-muted shadow-sm space-y-4">
                   <div className="flex items-center gap-2 mb-2">
@@ -1429,42 +1488,34 @@ export default function App() {
             )}
 
             <div className="space-y-3">
-              {searchQuery.trim() === '' && (
+              {isDbLoading && searchInput.trim() !== '' && (
+                <div className="text-center py-20 text-slate-400 dark:text-slate-500">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-natural-accent dark:border-dark-highlight mx-auto mb-4"></div>
+                  <p>Loading database...</p>
+                </div>
+              )}
+              {!isDbLoading && searchInput.trim() === '' && (
                 <div className="text-center py-20 text-slate-400 dark:text-slate-500">
                   <Search className="mx-auto mb-4 opacity-20" size={48} />
                   <p>Start typing to search for food...</p>
                 </div>
               )}
-              {searchQuery.trim() !== '' && filteredFood.length === 0 && (
+              {!isDbLoading && searchInput.trim() !== '' && filteredFood.length === 0 && (
                 <div className="text-center py-20 text-slate-400 dark:text-slate-500">
                   <p>No food found for "{searchQuery}"</p>
                 </div>
               )}
               {filteredFood.map((food) => (
-                <button 
+                <FoodItem 
                   key={food.id} 
+                  food={food} 
+                  translations={translations}
+                  language={userProfile.language}
                   onClick={() => {
                     setSelectedFood(food);
                     setServingsInput(food.type === 'unit' ? 1 : 100);
                   }}
-                  className="w-full text-left bg-natural-card dark:bg-dark-card rounded-2xl border border-natural-muted dark:border-dark-muted p-4 flex items-center justify-between shadow-sm hover:border-natural-accent dark:hover:border-dark-highlight transition-all"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">{food.emoji}</span>
-                    <div>
-                      <h3 className="font-medium text-slate-800 dark:text-white">{food.englishName}</h3>
-                      <p className="text-xs text-slate-400 dark:text-slate-500">{food.servingSize} • {food.calories} kcal</p>
-                      <div className="flex gap-2 mt-1 text-[10px] font-mono text-slate-400 dark:text-slate-500">
-                        <span>P: {food.protein}g</span>
-                        <span>C: {food.carbs}g</span>
-                        <span>F: {food.fat}g</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="bg-natural-muted dark:bg-dark-muted p-2 rounded-xl text-slate-400 dark:text-slate-500">
-                    <Plus size={20} />
-                  </div>
-                </button>
+                />
               ))}
             </div>
 
