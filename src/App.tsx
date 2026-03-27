@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Home, Target, PlusCircle, Calendar, ChevronRight, Search, Trash2, Plus, Minus, Settings, User, ArrowRight, Check, Camera, Moon, Sun, Beef, Wheat, Flame, X } from 'lucide-react';
+import { Home, Target, PlusCircle, Calendar, ChevronRight, Search, Trash2, Plus, Minus, Settings, User, ArrowRight, Check, Camera, Moon, Sun, Beef, Wheat, Flame, X, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Page, Food, LoggedFood, DIET_PLANS, DietPlan, MealType, UserProfile, GoalType } from './types';
 import { FOOD_DATABASE } from './foodDatabase';
+import { translations } from './translations';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>('homepage');
@@ -19,6 +20,7 @@ export default function App() {
     heightUnit: 'cm',
     activityLevel: '' as any,
     goal: '' as any,
+    language: 'en',
     onboarded: false,
     joinedAt: new Date().toLocaleDateString()
   });
@@ -529,18 +531,35 @@ export default function App() {
           <div className="p-8 space-y-12 min-h-screen flex flex-col justify-center bg-natural-bg dark:bg-dark-bg">
             <div className="space-y-4">
               <h1 className="text-4xl font-bold tracking-tight text-natural-ink dark:text-dark-ink">
-                {onboardingStep === 1 ? 'Welcome to MacroMaster' : 'Almost there!'}
+                {onboardingStep === 1 ? translations[userProfile.language].welcome : translations[userProfile.language].almostThere}
               </h1>
               <p className="text-lg text-natural-accent dark:text-dark-highlight leading-relaxed">
                 {onboardingStep === 1 
-                  ? "Let's start with the basics to get to know you better." 
-                  : "Now, tell us about your lifestyle and what you want to achieve."}
+                  ? translations[userProfile.language].basicsPrompt 
+                  : translations[userProfile.language].lifestylePrompt}
               </p>
             </div>
 
             <div className="space-y-8">
               {onboardingStep === 1 ? (
                 <>
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-natural-accent dark:text-dark-highlight uppercase tracking-wider flex items-center gap-2">
+                      <Globe size={14} /> {translations[userProfile.language].language}
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {(['en', 'fr'] as const).map(lang => (
+                        <button 
+                          key={lang}
+                          onClick={() => setUserProfile({...userProfile, language: lang})}
+                          className={`py-3 rounded-2xl font-bold transition-all border ${userProfile.language === lang ? 'bg-natural-ink dark:bg-dark-highlight border-natural-ink dark:border-dark-highlight text-natural-bg dark:text-dark-bg' : 'bg-natural-card dark:bg-dark-card border-natural-muted dark:border-dark-muted text-natural-accent dark:text-dark-highlight'}`}
+                        >
+                          {lang === 'en' ? translations[userProfile.language].english : translations[userProfile.language].french}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className="flex items-center gap-6">
                     <div className="relative">
                       <div className="w-24 h-24 bg-natural-muted dark:bg-dark-accent rounded-[32px] flex items-center justify-center text-natural-accent dark:text-dark-highlight overflow-hidden border-2 border-dashed border-natural-accent dark:border-dark-highlight">
@@ -558,10 +577,10 @@ export default function App() {
                       />
                     </div>
                     <div className="flex-1 space-y-2">
-                      <label className="text-sm font-semibold text-natural-accent dark:text-dark-highlight uppercase tracking-wider">Your Name</label>
+                      <label className="text-sm font-semibold text-natural-accent dark:text-dark-highlight uppercase tracking-wider">{translations[userProfile.language].yourName}</label>
                       <input 
                         type="text" 
-                        placeholder="Enter your name"
+                        placeholder={translations[userProfile.language].enterName}
                         value={userProfile.name}
                         onChange={(e) => setUserProfile({...userProfile, name: e.target.value})}
                         className="w-full bg-natural-card dark:bg-dark-card border border-natural-muted dark:border-dark-muted rounded-2xl py-4 px-6 text-xl font-bold focus:ring-2 focus:ring-natural-accent dark:focus:ring-dark-highlight transition-all"
@@ -571,7 +590,7 @@ export default function App() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-sm font-semibold text-natural-accent dark:text-dark-highlight uppercase tracking-wider">Gender</label>
+                      <label className="text-sm font-semibold text-natural-accent dark:text-dark-highlight uppercase tracking-wider">{translations[userProfile.language].gender}</label>
                       <div className="grid grid-cols-2 gap-2">
                         {(['male', 'female'] as const).map(g => (
                           <button 
@@ -579,13 +598,13 @@ export default function App() {
                             onClick={() => setUserProfile({...userProfile, gender: g})}
                             className={`py-3 rounded-2xl font-bold transition-all border ${userProfile.gender === g ? 'bg-natural-ink dark:bg-dark-highlight border-natural-ink dark:border-dark-highlight text-natural-bg dark:text-dark-bg' : 'bg-natural-card dark:bg-dark-card border-natural-muted dark:border-dark-muted text-natural-accent dark:text-dark-highlight'}`}
                           >
-                            {g.charAt(0).toUpperCase() + g.slice(1)}
+                            {g === 'male' ? translations[userProfile.language].male : translations[userProfile.language].female}
                           </button>
                         ))}
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-semibold text-natural-accent dark:text-dark-highlight uppercase tracking-wider">Age</label>
+                      <label className="text-sm font-semibold text-natural-accent dark:text-dark-highlight uppercase tracking-wider">{translations[userProfile.language].age}</label>
                       <input 
                         type="number" 
                         value={userProfile.age || ''}
@@ -598,7 +617,7 @@ export default function App() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <label className="text-sm font-semibold text-natural-accent dark:text-dark-highlight uppercase tracking-wider">Weight</label>
+                        <label className="text-sm font-semibold text-natural-accent dark:text-dark-highlight uppercase tracking-wider">{translations[userProfile.language].weight}</label>
                         <div className="flex bg-natural-muted dark:bg-dark-accent p-0.5 rounded-lg text-[10px] font-bold">
                           {(['kg', 'lb'] as const).map(u => (
                             <button 
@@ -624,7 +643,7 @@ export default function App() {
                     </div>
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <label className="text-sm font-semibold text-natural-accent dark:text-dark-highlight uppercase tracking-wider">Height</label>
+                        <label className="text-sm font-semibold text-natural-accent dark:text-dark-highlight uppercase tracking-wider">{translations[userProfile.language].height}</label>
                         <div className="flex bg-natural-muted dark:bg-dark-accent p-0.5 rounded-lg text-[10px] font-bold">
                           {(['cm', 'ft'] as const).map(u => (
                             <button 
@@ -659,20 +678,20 @@ export default function App() {
                         : 'bg-natural-muted dark:bg-dark-accent text-natural-accent dark:text-dark-highlight cursor-not-allowed opacity-50'
                     }`}
                   >
-                    Proceed <ArrowRight size={20} />
+                    {translations[userProfile.language].proceed} <ArrowRight size={20} />
                   </button>
                 </>
               ) : (
                 <>
                   <div className="space-y-4">
-                    <label className="text-sm font-semibold text-natural-accent dark:text-dark-highlight uppercase tracking-wider">Activity Level</label>
+                    <label className="text-sm font-semibold text-natural-accent dark:text-dark-highlight uppercase tracking-wider">{translations[userProfile.language].activityLevel}</label>
                     <div className="grid grid-cols-1 gap-2">
                       {[
-                        { id: 'sedentary', label: 'Sedentary', desc: 'Little to no exercise' },
-                        { id: 'light', label: 'Lightly Active', desc: 'Exercise 1–3 days/week' },
-                        { id: 'moderate', label: 'Moderately Active', desc: 'Exercise 3–5 days/week' },
-                        { id: 'very', label: 'Very Active', desc: 'Hard exercise 6–7 days/week' },
-                        { id: 'extra', label: 'Extra Active', desc: 'Physical job or athlete' }
+                        { id: 'sedentary', label: translations[userProfile.language].sedentary, desc: translations[userProfile.language].sedentaryDesc },
+                        { id: 'light', label: translations[userProfile.language].light, desc: translations[userProfile.language].lightDesc },
+                        { id: 'moderate', label: translations[userProfile.language].moderate, desc: translations[userProfile.language].moderateDesc },
+                        { id: 'very', label: translations[userProfile.language].very, desc: translations[userProfile.language].veryDesc },
+                        { id: 'extra', label: translations[userProfile.language].extra, desc: translations[userProfile.language].extraDesc }
                       ].map((level) => (
                         <button
                           key={level.id}
@@ -694,7 +713,7 @@ export default function App() {
                   </div>
 
                   <div className="space-y-4">
-                    <label className="text-sm font-semibold text-natural-accent dark:text-dark-highlight uppercase tracking-wider">What is your goal?</label>
+                    <label className="text-sm font-semibold text-natural-accent dark:text-dark-highlight uppercase tracking-wider">{translations[userProfile.language].goalPrompt}</label>
                     <div className="grid gap-3">
                       {(['cut', 'maintain', 'bulk', 'custom'] as const).map((goal) => (
                         <button
@@ -707,12 +726,17 @@ export default function App() {
                           }`}
                         >
                           <div className="text-left">
-                            <span className="font-bold capitalize text-lg block">{goal}</span>
+                            <span className="font-bold capitalize text-lg block">
+                              {goal === 'cut' ? translations[userProfile.language].cut : 
+                               goal === 'maintain' ? translations[userProfile.language].maintain : 
+                               goal === 'bulk' ? translations[userProfile.language].bulk : 
+                               translations[userProfile.language].custom}
+                            </span>
                             <span className="text-xs opacity-60">
-                              {goal === 'cut' && 'Lose weight & fat'}
-                              {goal === 'maintain' && 'Keep current weight'}
-                              {goal === 'bulk' && 'Gain muscle & strength'}
-                              {goal === 'custom' && 'Set your own targets'}
+                              {goal === 'cut' && translations[userProfile.language].cutDesc}
+                              {goal === 'maintain' && translations[userProfile.language].maintainDesc}
+                              {goal === 'bulk' && translations[userProfile.language].bulkDesc}
+                              {goal === 'custom' && translations[userProfile.language].customDesc}
                             </span>
                           </div>
                           {userProfile.goal === goal && <Check size={20} />}
@@ -726,7 +750,7 @@ export default function App() {
                       onClick={() => setOnboardingStep(1)}
                       className="flex-1 bg-natural-card dark:bg-dark-card text-natural-ink dark:text-dark-ink py-5 rounded-[24px] font-bold text-xl border border-natural-muted dark:border-dark-muted hover:bg-natural-muted dark:hover:bg-dark-accent transition-all"
                     >
-                      Back
+                      {translations[userProfile.language].back}
                     </button>
                     <button 
                       disabled={!isStep2Valid}
@@ -737,7 +761,7 @@ export default function App() {
                           : 'bg-natural-muted dark:bg-dark-accent text-natural-accent dark:text-dark-highlight cursor-not-allowed opacity-50'
                       }`}
                     >
-                      Get Started <Check size={20} />
+                      {translations[userProfile.language].getStarted} <Check size={20} />
                     </button>
                   </div>
                 </>
@@ -752,8 +776,29 @@ export default function App() {
               <button onClick={() => setCurrentPage('homepage')} className="p-2 bg-natural-card dark:bg-dark-card rounded-xl border border-natural-muted dark:border-dark-muted text-natural-accent dark:text-slate-400">
                 <Plus size={24} className="rotate-45" />
               </button>
-              <h1 className="text-2xl font-bold text-natural-ink dark:text-white">Settings</h1>
+              <h1 className="text-2xl font-bold text-natural-ink dark:text-white">{translations[userProfile.language].settings}</h1>
             </header>
+
+            <section className="space-y-4">
+              <h2 className="text-sm font-semibold text-natural-accent dark:text-white uppercase tracking-wider flex items-center gap-2">
+                <Globe size={14} /> {translations[userProfile.language].language}
+              </h2>
+              <div className="grid grid-cols-2 gap-3">
+                {(['en', 'fr'] as const).map(lang => (
+                  <button 
+                    key={lang}
+                    onClick={() => setUserProfile({...userProfile, language: lang})}
+                    className={`py-4 rounded-[24px] font-bold transition-all border ${
+                      userProfile.language === lang 
+                        ? 'bg-natural-ink dark:bg-dark-highlight border-natural-ink dark:border-dark-highlight text-natural-bg dark:text-dark-bg shadow-lg' 
+                        : 'bg-natural-card dark:bg-[#1a2332] border-natural-muted dark:border-slate-800 text-natural-accent dark:text-slate-400'
+                    }`}
+                  >
+                    {lang === 'en' ? translations[userProfile.language].english : translations[userProfile.language].french}
+                  </button>
+                ))}
+              </div>
+            </section>
 
             <section className="space-y-4">
               <h2 className="text-sm font-semibold text-natural-accent dark:text-white uppercase tracking-wider">Appearance</h2>
@@ -779,7 +824,7 @@ export default function App() {
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-sm font-semibold text-natural-accent dark:text-white uppercase tracking-wider">Profile Information</h2>
+              <h2 className="text-sm font-semibold text-natural-accent dark:text-white uppercase tracking-wider">{translations[userProfile.language].profile}</h2>
               <div className="bg-natural-card dark:bg-dark-card rounded-3xl p-6 border border-natural-muted dark:border-dark-muted shadow-sm space-y-6">
                 <div className="flex items-center gap-6">
                   <div className="relative">
@@ -798,7 +843,7 @@ export default function App() {
                     />
                   </div>
                   <div className="flex-1 space-y-2">
-                    <label className="text-xs font-medium text-natural-accent dark:text-slate-400">Your Name</label>
+                    <label className="text-xs font-medium text-natural-accent dark:text-slate-400">{translations[userProfile.language].yourName}</label>
                     <input 
                       type="text" 
                       value={userProfile.name}
@@ -811,7 +856,7 @@ export default function App() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
-                      <label className="text-xs font-medium text-natural-accent dark:text-slate-400">Weight</label>
+                      <label className="text-xs font-medium text-natural-accent dark:text-slate-400">{translations[userProfile.language].weight}</label>
                       <div className="flex bg-natural-muted dark:bg-dark-accent p-0.5 rounded-lg text-[8px] font-bold">
                         {(['kg', 'lb'] as const).map(u => (
                           <button 
@@ -837,7 +882,7 @@ export default function App() {
                   </div>
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
-                      <label className="text-xs font-medium text-natural-accent dark:text-slate-400">Height</label>
+                      <label className="text-xs font-medium text-natural-accent dark:text-slate-400">{translations[userProfile.language].height}</label>
                       <div className="flex bg-natural-muted dark:bg-dark-accent p-0.5 rounded-lg text-[8px] font-bold">
                         {(['cm', 'ft'] as const).map(u => (
                           <button 
@@ -865,7 +910,7 @@ export default function App() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-natural-accent dark:text-slate-400">Gender</label>
+                    <label className="text-xs font-medium text-natural-accent dark:text-slate-400">{translations[userProfile.language].gender}</label>
                     <div className="grid grid-cols-2 gap-2">
                       {(['male', 'female'] as const).map(g => (
                         <button 
@@ -873,13 +918,13 @@ export default function App() {
                           onClick={() => setUserProfile({...userProfile, gender: g})}
                           className={`py-2 rounded-xl font-bold transition-all border ${userProfile.gender === g ? 'bg-natural-ink dark:bg-dark-highlight border-natural-ink dark:border-dark-highlight text-natural-bg dark:text-white' : 'bg-natural-bg dark:bg-dark-muted border-natural-muted dark:border-dark-muted text-natural-accent dark:text-slate-400'}`}
                         >
-                          {g.charAt(0).toUpperCase() + g.slice(1)}
+                          {g === 'male' ? translations[userProfile.language].male : translations[userProfile.language].female}
                         </button>
                       ))}
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-natural-accent dark:text-slate-400">Age</label>
+                    <label className="text-xs font-medium text-natural-accent dark:text-slate-400">{translations[userProfile.language].age}</label>
                     <input 
                       type="number" 
                       value={userProfile.age}
@@ -890,17 +935,17 @@ export default function App() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-medium text-natural-accent dark:text-slate-400">Activity Level</label>
+                  <label className="text-xs font-medium text-natural-accent dark:text-slate-400">{translations[userProfile.language].activityLevel}</label>
                   <select 
                     value={userProfile.activityLevel}
                     onChange={(e) => setUserProfile({...userProfile, activityLevel: e.target.value as any})}
                     className="w-full bg-natural-bg dark:bg-dark-muted border-none rounded-xl py-3 px-4 font-bold text-natural-ink dark:text-white focus:ring-2 focus:ring-natural-accent dark:focus:ring-dark-highlight"
                   >
-                    <option value="sedentary">Sedentary (Little/no exercise)</option>
-                    <option value="light">Lightly Active (1-3 days/week)</option>
-                    <option value="moderate">Moderately Active (3-5 days/week)</option>
-                    <option value="very">Very Active (6-7 days/week)</option>
-                    <option value="extra">Extra Active (Physical job/athlete)</option>
+                    <option value="sedentary">{translations[userProfile.language].sedentary}</option>
+                    <option value="light">{translations[userProfile.language].light}</option>
+                    <option value="moderate">{translations[userProfile.language].moderate}</option>
+                    <option value="very">{translations[userProfile.language].very}</option>
+                    <option value="extra">{translations[userProfile.language].extra}</option>
                   </select>
                 </div>
 
@@ -908,24 +953,24 @@ export default function App() {
                   onClick={recalculateGoal}
                   className="w-full py-3 bg-natural-muted dark:bg-dark-accent text-natural-ink dark:text-white rounded-xl font-bold text-sm hover:opacity-90 transition-all border border-natural-muted dark:border-dark-muted"
                 >
-                  Recalculate Calorie Goal
+                  {translations[userProfile.language].recalculate}
                 </button>
               </div>
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-sm font-semibold text-natural-accent dark:text-white uppercase tracking-wider">History & Stats</h2>
+              <h2 className="text-sm font-semibold text-natural-accent dark:text-white uppercase tracking-wider">{translations[userProfile.language].history}</h2>
               <div className="bg-natural-card dark:bg-dark-card rounded-3xl p-6 border border-natural-muted dark:border-dark-muted shadow-sm space-y-4">
                 <div className="flex justify-between items-center py-2 border-b border-natural-muted dark:border-dark-muted">
                   <span className="text-sm text-natural-accent dark:text-slate-400">Current Goal</span>
-                  <span className="text-sm font-bold capitalize px-3 py-1 bg-natural-muted dark:bg-dark-accent rounded-full text-natural-ink dark:text-white">{userProfile.goal}</span>
+                  <span className="text-sm font-bold capitalize px-3 py-1 bg-natural-muted dark:bg-dark-accent rounded-full text-natural-ink dark:text-white">{translations[userProfile.language][userProfile.goal as keyof typeof translations['en']]}</span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-natural-muted dark:border-dark-muted">
                   <span className="text-sm text-natural-accent dark:text-slate-400">Total Logs</span>
                   <span className="text-sm font-bold text-natural-ink dark:text-white">{dailyLogs.length}</span>
                 </div>
                 <div className="flex justify-between items-center py-2">
-                  <span className="text-sm text-natural-accent dark:text-slate-400">Member Since</span>
+                  <span className="text-sm text-natural-accent dark:text-slate-400">{translations[userProfile.language].memberSince}</span>
                   <span className="text-sm font-bold text-natural-ink dark:text-white">{userProfile.joinedAt || 'Today'}</span>
                 </div>
               </div>
@@ -938,14 +983,14 @@ export default function App() {
               }}
               className="w-full py-4 text-red-500 font-medium text-sm hover:bg-red-50 dark:hover:bg-red-900/20 rounded-2xl transition-all"
             >
-              Reset All Data
+              {translations[userProfile.language].deleteData}
             </button>
           </div>
         );
       case 'homepage':
         return (
           <div className="p-6 space-y-8 pb-24">
-            {renderHeader('Today', 'Track your progress')}
+            {renderHeader(translations[userProfile.language].today, translations[userProfile.language].trackProgress)}
 
             <div className="bg-natural-card dark:bg-dark-surface rounded-3xl p-8 shadow-sm border border-natural-muted dark:border-dark-muted relative overflow-hidden">
               <div className="relative z-10">
@@ -956,7 +1001,7 @@ export default function App() {
                   </div>
                   <div className="text-right">
                     <span className={`text-sm font-medium ${totals.calories > calorieGoal ? 'text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                      {totals.calories > calorieGoal ? 'Over' : 'Remaining'} {Math.abs(Math.round(calorieGoal - totals.calories))}
+                      {totals.calories > calorieGoal ? translations[userProfile.language].over : translations[userProfile.language].remaining} {Math.abs(Math.round(calorieGoal - totals.calories))}
                     </span>
                   </div>
                 </div>
@@ -973,7 +1018,7 @@ export default function App() {
             <div className="space-y-4">
               {[
                 { 
-                  label: 'PROTEIN', 
+                  label: translations[userProfile.language].protein.toUpperCase(), 
                   current: totals.protein, 
                   target: targetMacros.protein, 
                   color: 'text-emerald-500', 
@@ -982,7 +1027,7 @@ export default function App() {
                   left: Math.max(0, Math.round(targetMacros.protein - totals.protein))
                 },
                 { 
-                  label: 'CARBS', 
+                  label: translations[userProfile.language].carbs.toUpperCase(), 
                   current: totals.carbs, 
                   target: targetMacros.carbs, 
                   color: 'text-amber-500', 
@@ -991,7 +1036,7 @@ export default function App() {
                   left: Math.max(0, Math.round(targetMacros.carbs - totals.carbs))
                 },
                 { 
-                  label: 'FAT', 
+                  label: translations[userProfile.language].fat.toUpperCase(), 
                   current: totals.fat, 
                   target: targetMacros.fat, 
                   color: 'text-rose-500', 
@@ -1017,7 +1062,7 @@ export default function App() {
                   </div>
                   <div className="text-right">
                     <p className={`text-sm font-bold ${macro.color}`}>
-                      {macro.left > 0 && macro.left < 10 ? macro.left.toFixed(1) : Math.round(macro.left)}g left
+                      {macro.left > 0 && macro.left < 10 ? macro.left.toFixed(1) : Math.round(macro.left)}g {translations[userProfile.language].left}
                     </p>
                       <div className="w-32 bg-slate-200 dark:bg-slate-800 h-2 rounded-full mt-2 overflow-hidden">
                         <motion.div 
@@ -1038,9 +1083,9 @@ export default function App() {
 
             <section>
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold text-natural-ink dark:text-slate-100">Recent Logs</h2>
+                <h2 className="text-lg font-semibold text-natural-ink dark:text-slate-100">{translations[userProfile.language].recentLogs}</h2>
                 <button onClick={() => setCurrentPage('daily')} className="text-sm text-natural-accent dark:text-slate-400 flex items-center gap-1 hover:text-natural-ink dark:hover:text-slate-200 transition-colors">
-                  View all <ChevronRight size={16} />
+                  {translations[userProfile.language].viewAll} <ChevronRight size={16} />
                 </button>
               </div>
               <div className="space-y-3">
@@ -1067,7 +1112,7 @@ export default function App() {
                 })}
                 {dailyLogs.length === 0 && (
                   <div className="text-center py-12 text-natural-accent dark:text-slate-500 bg-natural-muted/20 dark:bg-dark-muted/20 rounded-[32px] border border-dashed border-natural-muted dark:border-dark-muted">
-                    <p className="italic">No food logged yet today.</p>
+                    <p className="italic">{translations[userProfile.language].noLogs}</p>
                   </div>
                 )}
               </div>
@@ -1078,7 +1123,7 @@ export default function App() {
         const meals: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
         return (
           <div className="p-6 space-y-6 pb-24">
-            {renderHeader('Daily Log', 'Everything you\'ve eaten today')}
+            {renderHeader(translations[userProfile.language].dailyLog, translations[userProfile.language].dailyLogDesc)}
             <div className="space-y-8">
               {meals.map((meal) => {
                 const mealLogs = dailyLogs.filter(log => log.mealType === meal);
@@ -1088,7 +1133,7 @@ export default function App() {
                   <div key={meal} className="space-y-3">
                     <h2 className="text-sm font-semibold text-natural-accent dark:text-dark-highlight uppercase tracking-wider flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-natural-muted dark:bg-dark-muted"></span>
-                      {meal}
+                      {translations[userProfile.language][meal as keyof typeof translations['en']]}
                     </h2>
                     <div className="space-y-3">
                       {mealLogs.map((log) => {
@@ -1134,7 +1179,7 @@ export default function App() {
               {dailyLogs.length === 0 && (
                 <div className="text-center py-20 text-natural-accent dark:text-dark-highlight">
                   <Calendar className="mx-auto mb-4 opacity-20" size={48} />
-                  <p>Your log is empty.</p>
+                  <p>{translations[userProfile.language].emptyLog}</p>
                 </div>
               )}
             </div>
@@ -1143,12 +1188,12 @@ export default function App() {
       case 'add-food':
         return (
           <div className="p-6 space-y-6 pb-24 text-slate-500 dark:text-slate-400">
-            {renderHeader('Add Food')}
+            {renderHeader(translations[userProfile.language].addFood)}
             <div className="relative mt-4">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={18} />
               <input 
                 type="text"
-                placeholder="Search food database..."
+                placeholder={translations[userProfile.language].searchDatabase}
                 className="w-full bg-natural-muted dark:bg-dark-accent border-none rounded-2xl py-3 pl-10 pr-10 focus:ring-2 focus:ring-natural-accent dark:focus:ring-dark-highlight transition-all text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -1170,11 +1215,11 @@ export default function App() {
                 <div className="bg-natural-card dark:bg-dark-card rounded-3xl p-6 border border-natural-muted dark:border-dark-muted shadow-sm space-y-4">
                   <div className="flex items-center gap-2 mb-2">
                     <PlusCircle size={18} className="text-natural-accent dark:text-dark-highlight" />
-                    <h2 className="text-sm font-bold text-natural-ink dark:text-white uppercase tracking-wider">Quick Add Macros</h2>
+                    <h2 className="text-sm font-bold text-natural-ink dark:text-white uppercase tracking-wider">{translations[userProfile.language].quickAdd}</h2>
                   </div>
                   <div className="grid grid-cols-3 gap-3">
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-emerald-500 tracking-widest uppercase">Protein (g)</label>
+                      <label className="text-[10px] font-bold text-emerald-500 tracking-widest uppercase">{translations[userProfile.language].protein} (g)</label>
                       <input 
                         type="number" 
                         placeholder="0"
@@ -1184,7 +1229,7 @@ export default function App() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-amber-500 tracking-widest uppercase">Carbs (g)</label>
+                      <label className="text-[10px] font-bold text-amber-500 tracking-widest uppercase">{translations[userProfile.language].carbs} (g)</label>
                       <input 
                         type="number" 
                         placeholder="0"
@@ -1194,7 +1239,7 @@ export default function App() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-rose-500 tracking-widest uppercase">Fat (g)</label>
+                      <label className="text-[10px] font-bold text-rose-500 tracking-widest uppercase">{translations[userProfile.language].fat} (g)</label>
                       <input 
                         type="number" 
                         placeholder="0"
@@ -1216,7 +1261,7 @@ export default function App() {
                               : 'text-natural-accent dark:text-slate-500'
                           }`}
                         >
-                          {meal}
+                          {translations[userProfile.language][meal as keyof typeof translations['en']]}
                         </button>
                       ))}
                     </div>
@@ -1233,14 +1278,14 @@ export default function App() {
                 <div className="bg-natural-card dark:bg-dark-card rounded-3xl p-6 border border-natural-muted dark:border-dark-muted shadow-sm space-y-4">
                   <div className="flex items-center gap-2 mb-2">
                     <PlusCircle size={18} className="text-natural-accent dark:text-dark-highlight" />
-                    <h2 className="text-sm font-bold text-natural-ink dark:text-white uppercase tracking-wider">Add Custom Meal</h2>
-                    <p className="text-[10px] text-natural-accent dark:text-slate-500 font-medium">Macros will be saved per 100g</p>
+                    <h2 className="text-sm font-bold text-natural-ink dark:text-white uppercase tracking-wider">{translations[userProfile.language].addCustom}</h2>
+                    <p className="text-[10px] text-natural-accent dark:text-slate-500 font-medium">{translations[userProfile.language].macrosPer100g}</p>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-natural-accent dark:text-slate-400 tracking-widest uppercase">Meal Name</label>
+                    <label className="text-[10px] font-bold text-natural-accent dark:text-slate-400 tracking-widest uppercase">{translations[userProfile.language].mealName}</label>
                     <input 
                       type="text" 
-                      placeholder="e.g. My Special Salad"
+                      placeholder={translations[userProfile.language].placeholderMeal}
                       value={customMealName}
                       onChange={(e) => setCustomMealName(e.target.value)}
                       className="w-full bg-natural-muted dark:bg-dark-accent border-none rounded-xl py-2.5 px-3 text-sm font-bold text-natural-ink dark:text-white focus:ring-2 focus:ring-natural-accent dark:focus:ring-dark-highlight transition-all"
@@ -1248,7 +1293,7 @@ export default function App() {
                   </div>
                   <div className="grid grid-cols-3 gap-3">
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-emerald-500 tracking-widest uppercase">Protein (g)</label>
+                      <label className="text-[10px] font-bold text-emerald-500 tracking-widest uppercase">{translations[userProfile.language].protein} (g)</label>
                       <input 
                         type="number" 
                         placeholder="0"
@@ -1258,7 +1303,7 @@ export default function App() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-amber-500 tracking-widest uppercase">Carbs (g)</label>
+                      <label className="text-[10px] font-bold text-amber-500 tracking-widest uppercase">{translations[userProfile.language].carbs} (g)</label>
                       <input 
                         type="number" 
                         placeholder="0"
@@ -1268,7 +1313,7 @@ export default function App() {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-rose-500 tracking-widest uppercase">Fat (g)</label>
+                      <label className="text-[10px] font-bold text-rose-500 tracking-widest uppercase">{translations[userProfile.language].fat} (g)</label>
                       <input 
                         type="number" 
                         placeholder="0"
@@ -1285,7 +1330,7 @@ export default function App() {
                       className="w-full bg-natural-ink dark:bg-dark-highlight text-natural-bg dark:text-dark-bg py-3 rounded-xl font-bold hover:opacity-90 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
                       <Plus size={20} />
-                      <span>Save to Database</span>
+                      <span>{translations[userProfile.language].saveToDatabase}</span>
                     </button>
                   </div>
                 </div>
@@ -1294,14 +1339,14 @@ export default function App() {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <PlusCircle size={18} className="text-natural-accent dark:text-dark-highlight" />
-                      <h2 className="text-sm font-bold text-natural-ink dark:text-white uppercase tracking-wider">Create Custom Recipe</h2>
+                      <h2 className="text-sm font-bold text-natural-ink dark:text-white uppercase tracking-wider">{translations[userProfile.language].createRecipe}</h2>
                     </div>
                     {!isCreatingRecipe && (
                       <button 
                         onClick={() => setIsCreatingRecipe(true)}
                         className="text-[10px] font-bold text-natural-accent dark:text-dark-highlight uppercase tracking-widest hover:bg-natural-accent/10 dark:hover:bg-dark-highlight/10 transition-all border border-natural-accent/30 dark:border-dark-highlight/30 px-3 py-1.5 rounded-xl"
                       >
-                        Start New
+                        {translations[userProfile.language].startNew}
                       </button>
                     )}
                   </div>
@@ -1309,10 +1354,10 @@ export default function App() {
                   {isCreatingRecipe ? (
                     <div className="space-y-4">
                       <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold text-natural-accent dark:text-slate-400 tracking-widest uppercase">Recipe Name</label>
+                        <label className="text-[10px] font-bold text-natural-accent dark:text-slate-400 tracking-widest uppercase">{translations[userProfile.language].recipeName}</label>
                         <input 
                           type="text" 
-                          placeholder="e.g. Grandma's Lasagna"
+                          placeholder={translations[userProfile.language].placeholderRecipe}
                           value={recipeName}
                           onChange={(e) => setRecipeName(e.target.value)}
                           className="w-full bg-natural-muted dark:bg-dark-accent border-none rounded-xl py-2.5 px-3 text-sm font-bold text-natural-ink dark:text-white focus:ring-2 focus:ring-natural-accent dark:focus:ring-dark-highlight transition-all"
@@ -1321,7 +1366,7 @@ export default function App() {
 
                       {recipeIngredients.length > 0 && (
                         <div className="space-y-2">
-                          <label className="text-[10px] font-bold text-natural-accent dark:text-slate-400 tracking-widest uppercase">Ingredients</label>
+                          <label className="text-[10px] font-bold text-natural-accent dark:text-slate-400 tracking-widest uppercase">{translations[userProfile.language].ingredients}</label>
                           <div className="space-y-2">
                             {recipeIngredients.map((ingredient, idx) => (
                               <div key={idx} className="flex items-center justify-between bg-natural-muted dark:bg-dark-accent p-3 rounded-xl">
@@ -1353,7 +1398,7 @@ export default function App() {
                           }}
                           className="flex-1 bg-natural-muted dark:bg-dark-accent text-natural-accent dark:text-slate-400 py-3 rounded-xl font-bold hover:opacity-90 transition-all"
                         >
-                          Cancel
+                          {translations[userProfile.language].cancel}
                         </button>
                         <button 
                           onClick={saveRecipe}
@@ -1361,16 +1406,16 @@ export default function App() {
                           className="flex-[2] bg-natural-ink dark:bg-dark-highlight text-natural-bg dark:text-dark-bg py-3 rounded-xl font-bold hover:opacity-90 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
                           <Check size={20} />
-                          <span>Save Recipe</span>
+                          <span>{translations[userProfile.language].saveRecipe}</span>
                         </button>
                       </div>
                       <p className="text-[10px] text-center text-natural-accent dark:text-slate-500 italic">
-                        Search for food below to add ingredients
+                        {translations[userProfile.language].searchIngredients}
                       </p>
                     </div>
                   ) : (
                     <p className="text-xs text-natural-accent dark:text-slate-500">
-                      Combine multiple food items to create a searchable recipe with auto-calculated macros.
+                      {translations[userProfile.language].recipeDesc}
                     </p>
                   )}
                 </div>
@@ -1521,10 +1566,31 @@ export default function App() {
       case 'goal':
         return (
           <div className="p-6 space-y-8 pb-24">
-            {renderHeader('Goals & Plans', 'Customize your nutrition target')}
+            {renderHeader(translations[userProfile.language].settings, translations[userProfile.language].language)}
 
             <section className="space-y-4">
-              <h2 className="text-sm font-semibold text-natural-accent dark:text-white uppercase tracking-wider">Daily Calorie Goal</h2>
+              <h2 className="text-sm font-semibold text-natural-accent dark:text-white uppercase tracking-wider flex items-center gap-2">
+                <Globe size={14} /> {translations[userProfile.language].language}
+              </h2>
+              <div className="grid grid-cols-2 gap-3">
+                {(['en', 'fr'] as const).map(lang => (
+                  <button 
+                    key={lang}
+                    onClick={() => setUserProfile({...userProfile, language: lang})}
+                    className={`py-4 rounded-[24px] font-bold transition-all border ${
+                      userProfile.language === lang 
+                        ? 'bg-natural-ink dark:bg-dark-highlight border-natural-ink dark:border-dark-highlight text-natural-bg dark:text-dark-bg shadow-lg' 
+                        : 'bg-natural-card dark:bg-[#1a2332] border-natural-muted dark:border-slate-800 text-natural-accent dark:text-slate-400'
+                    }`}
+                  >
+                    {lang === 'en' ? translations[userProfile.language].english : translations[userProfile.language].french}
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section className="space-y-4">
+              <h2 className="text-sm font-semibold text-natural-accent dark:text-white uppercase tracking-wider">{translations[userProfile.language].calories}</h2>
               <div className="bg-natural-card dark:bg-dark-card rounded-3xl p-6 border border-natural-muted dark:border-dark-muted shadow-sm">
                 <div className="flex items-center gap-4">
                   <div className="flex-1 relative">
@@ -1541,7 +1607,7 @@ export default function App() {
                     <button onClick={() => setCalorieGoal(prev => Math.max(0, prev - 100))} className="p-2 bg-natural-muted dark:bg-dark-accent rounded-xl hover:opacity-80 transition-colors text-natural-ink dark:text-dark-ink"><Minus size={20}/></button>
                   </div>
                 </div>
-                <p className="text-xs text-natural-accent dark:text-slate-500 mt-4">Enter your target daily calories. No upper limit.</p>
+                <p className="text-xs text-natural-accent dark:text-slate-500 mt-4">{translations[userProfile.language].dailyGoal}</p>
               </div>
             </section>
 
@@ -1579,12 +1645,12 @@ export default function App() {
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-sm font-semibold text-natural-accent dark:text-white uppercase tracking-wider">Macros Target</h2>
+              <h2 className="text-sm font-semibold text-natural-accent dark:text-white uppercase tracking-wider">{translations[userProfile.language].protein} / {translations[userProfile.language].carbs} / {translations[userProfile.language].fat}</h2>
               <div className="bg-natural-card dark:bg-[#111827] rounded-[32px] p-8 border border-natural-muted dark:border-slate-800 shadow-xl space-y-10">
                 {[
-                  { label: 'Protein', value: proteinPct, type: 'p' as const, grams: targetMacros.protein },
-                  { label: 'Carbs', value: carbsPct, type: 'c' as const, grams: targetMacros.carbs },
-                  { label: 'Fats', value: fatPct, type: 'f' as const, grams: targetMacros.fat },
+                  { label: translations[userProfile.language].protein, value: proteinPct, type: 'p' as const, grams: targetMacros.protein },
+                  { label: translations[userProfile.language].carbs, value: carbsPct, type: 'c' as const, grams: targetMacros.carbs },
+                  { label: translations[userProfile.language].fat, value: fatPct, type: 'f' as const, grams: targetMacros.fat },
                 ].map((macro) => (
                   <div key={macro.label} className="space-y-4">
                     <div className="flex justify-between items-end">
@@ -1616,7 +1682,7 @@ export default function App() {
                   onClick={() => setCurrentPage('homepage')}
                   className="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-5 rounded-2xl font-bold text-lg transition-all shadow-lg shadow-emerald-500/20 active:scale-[0.98]"
                 >
-                  Save Goals
+                  {translations[userProfile.language].saveChanges}
                 </button>
 
                 <div className="text-center text-xs font-medium text-slate-500 dark:text-slate-500">

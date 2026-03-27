@@ -17,6 +17,7 @@ export interface UserProfile {
   heightUnit: 'cm' | 'ft';
   activityLevel: ActivityLevel;
   goal: GoalType;
+  language: 'en' | 'fr';
   onboarded: boolean;
   joinedAt?: string;
 }
