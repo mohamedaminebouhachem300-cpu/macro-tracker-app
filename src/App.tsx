@@ -68,9 +68,15 @@ export default function App() {
       // Ensure joinedAt exists for existing users
       if (!profile.joinedAt) {
         profile.joinedAt = new Date().toLocaleDateString();
-        localStorage.setItem('macro_profile', JSON.stringify(profile));
       }
-      setUserProfile(profile);
+      // Ensure language exists for existing users
+      if (!profile.language) {
+        profile.language = 'en';
+      }
+      
+      // Merge with default profile to ensure all fields exist
+      setUserProfile(prev => ({ ...prev, ...profile }));
+      
       if (!profile.onboarded) {
         setCurrentPage('onboarding');
       }
