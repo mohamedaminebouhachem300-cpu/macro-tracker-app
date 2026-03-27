@@ -6,16 +6,21 @@ import { FOOD_DATABASE } from './foodDatabase';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>('homepage');
+  const [onboardingStep, setOnboardingStep] = useState(1);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile>({
     name: '',
     photoUrl: '',
-    weight: 70,
+    age: 0,
+    gender: 'male',
+    weight: 0,
     weightUnit: 'kg',
-    height: 170,
+    height: 0,
     heightUnit: 'cm',
-    goal: 'maintain',
-    onboarded: false
+    activityLevel: '' as any,
+    goal: '' as any,
+    onboarded: false,
+    joinedAt: new Date().toLocaleDateString()
   });
   const [calorieGoal, setCalorieGoal] = useState(2000);
   const [proteinPct, setProteinPct] = useState(30);
@@ -58,6 +63,11 @@ export default function App() {
     
     if (savedProfile) {
       const profile = JSON.parse(savedProfile);
+      // Ensure joinedAt exists for existing users
+      if (!profile.joinedAt) {
+        profile.joinedAt = new Date().toLocaleDateString();
+        localStorage.setItem('macro_profile', JSON.stringify(profile));
+      }
       setUserProfile(profile);
       if (!profile.onboarded) {
         setCurrentPage('onboarding');
@@ -339,23 +349,43 @@ export default function App() {
   };
 
   const completeOnboarding = (profile: UserProfile) => {
-    setUserProfile(profile);
+    const updatedProfile = { ...profile, joinedAt: new Date().toLocaleDateString(), onboarded: true };
+    setUserProfile(updatedProfile);
     
-    // Convert to kg for calorie calculation
+    // Convert to kg and cm for calorie calculation
     const weightInKg = profile.weightUnit === 'lb' ? profile.weight / 2.20462 : profile.weight;
+    const heightInCm = profile.heightUnit === 'ft' ? profile.height * 30.48 : profile.height;
     
-    // Calculate initial calories based on goal
-    let initialCalories = weightInKg * 33;
+    // 1. Calculate BMR (Mifflin-St Jeor Equation)
+    let bmr = (10 * weightInKg) + (6.25 * heightInCm) - (5 * profile.age);
+    if (profile.gender === 'male') {
+      bmr += 5;
+    } else {
+      bmr -= 161;
+    }
+    
+    // 2. Apply Activity Multiplier
+    const multipliers = {
+      sedentary: 1.2,
+      light: 1.375,
+      moderate: 1.55,
+      very: 1.725,
+      extra: 1.9
+    };
+    const tdee = bmr * multipliers[profile.activityLevel];
+    
+    // 3. Adjust for Goals
+    let initialCalories = tdee;
     let planKey = 'balanced';
     
     if (profile.goal === 'cut') {
-      initialCalories = weightInKg * 28;
+      initialCalories = tdee * 0.85; // 15% deficit
       planKey = 'cutting';
     } else if (profile.goal === 'bulk') {
-      initialCalories = weightInKg * 38;
+      initialCalories = tdee * 1.075; // 7.5% surplus
       planKey = 'bulking';
     } else if (profile.goal === 'custom') {
-      initialCalories = weightInKg * 33;
+      initialCalories = tdee;
       planKey = 'balanced';
     }
     
@@ -365,8 +395,54 @@ export default function App() {
     setCarbsPct(plan.carbsPct);
     setFatPct(plan.fatPct);
     
-    setUserProfile({ ...profile, onboarded: true });
     setCurrentPage(profile.goal === 'custom' ? 'goal' : 'homepage');
+  };
+
+  const recalculateGoal = () => {
+    // Convert to kg and cm for calorie calculation
+    const weightInKg = userProfile.weightUnit === 'lb' ? userProfile.weight / 2.20462 : userProfile.weight;
+    const heightInCm = userProfile.heightUnit === 'ft' ? userProfile.height * 30.48 : userProfile.height;
+    
+    // 1. Calculate BMR (Mifflin-St Jeor Equation)
+    let bmr = (10 * weightInKg) + (6.25 * heightInCm) - (5 * userProfile.age);
+    if (userProfile.gender === 'male') {
+      bmr += 5;
+    } else {
+      bmr -= 161;
+    }
+    
+    // 2. Apply Activity Multiplier
+    const multipliers = {
+      sedentary: 1.2,
+      light: 1.375,
+      moderate: 1.55,
+      very: 1.725,
+      extra: 1.9
+    };
+    const tdee = bmr * multipliers[userProfile.activityLevel];
+    
+    // 3. Adjust for Goals
+    let initialCalories = tdee;
+    let planKey = 'balanced';
+    
+    if (userProfile.goal === 'cut') {
+      initialCalories = tdee * 0.85; // 15% deficit
+      planKey = 'cutting';
+    } else if (userProfile.goal === 'bulk') {
+      initialCalories = tdee * 1.075; // 7.5% surplus
+      planKey = 'bulking';
+    } else if (userProfile.goal === 'custom') {
+      initialCalories = tdee;
+      planKey = 'balanced';
+    }
+    
+    const plan = DIET_PLANS[planKey];
+    setCalorieGoal(Math.round(initialCalories));
+    setProteinPct(plan.proteinPct);
+    setCarbsPct(plan.carbsPct);
+    setFatPct(plan.fatPct);
+    
+    alert(`Your calorie goal has been recalculated to ${Math.round(initialCalories)} kcal based on your updated profile.`);
   };
 
   const renderHeader = (title: string, subtitle?: string) => (
@@ -446,132 +522,227 @@ export default function App() {
   const renderPage = () => {
     switch (currentPage) {
       case 'onboarding':
+        const isStep1Valid = userProfile.name.trim() !== '' && userProfile.age > 0 && userProfile.weight > 0 && userProfile.height > 0;
+        const isStep2Valid = !!userProfile.activityLevel && !!userProfile.goal;
+        
         return (
           <div className="p-8 space-y-12 min-h-screen flex flex-col justify-center bg-natural-bg dark:bg-dark-bg">
             <div className="space-y-4">
-              <h1 className="text-4xl font-bold tracking-tight text-natural-ink dark:text-dark-ink">Welcome to MacroMaster</h1>
-              <p className="text-lg text-natural-accent dark:text-dark-highlight leading-relaxed">Let's personalize your experience to help you reach your goals faster.</p>
+              <h1 className="text-4xl font-bold tracking-tight text-natural-ink dark:text-dark-ink">
+                {onboardingStep === 1 ? 'Welcome to MacroMaster' : 'Almost there!'}
+              </h1>
+              <p className="text-lg text-natural-accent dark:text-dark-highlight leading-relaxed">
+                {onboardingStep === 1 
+                  ? "Let's start with the basics to get to know you better." 
+                  : "Now, tell us about your lifestyle and what you want to achieve."}
+              </p>
             </div>
 
             <div className="space-y-8">
-              <div className="flex items-center gap-6">
-                <div className="relative">
-                  <div className="w-24 h-24 bg-natural-muted dark:bg-dark-accent rounded-[32px] flex items-center justify-center text-natural-accent dark:text-dark-highlight overflow-hidden border-2 border-dashed border-natural-accent dark:border-dark-highlight">
-                    {userProfile.photoUrl ? (
-                      <img src={userProfile.photoUrl} alt="Profile" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                    ) : (
-                      <Camera size={32} />
-                    )}
+              {onboardingStep === 1 ? (
+                <>
+                  <div className="flex items-center gap-6">
+                    <div className="relative">
+                      <div className="w-24 h-24 bg-natural-muted dark:bg-dark-accent rounded-[32px] flex items-center justify-center text-natural-accent dark:text-dark-highlight overflow-hidden border-2 border-dashed border-natural-accent dark:border-dark-highlight">
+                        {userProfile.photoUrl ? (
+                          <img src={userProfile.photoUrl} alt="Profile" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        ) : (
+                          <Camera size={32} />
+                        )}
+                      </div>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={handlePhotoUpload}
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                      />
+                    </div>
+                    <div className="flex-1 space-y-2">
+                      <label className="text-sm font-semibold text-natural-accent dark:text-dark-highlight uppercase tracking-wider">Your Name</label>
+                      <input 
+                        type="text" 
+                        placeholder="Enter your name"
+                        value={userProfile.name}
+                        onChange={(e) => setUserProfile({...userProfile, name: e.target.value})}
+                        className="w-full bg-natural-card dark:bg-dark-card border border-natural-muted dark:border-dark-muted rounded-2xl py-4 px-6 text-xl font-bold focus:ring-2 focus:ring-natural-accent dark:focus:ring-dark-highlight transition-all"
+                      />
+                    </div>
                   </div>
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    onChange={handlePhotoUpload}
-                    className="absolute inset-0 opacity-0 cursor-pointer"
-                  />
-                </div>
-                <div className="flex-1 space-y-2">
-                  <label className="text-sm font-semibold text-natural-accent dark:text-dark-highlight uppercase tracking-wider">Your Name</label>
-                  <input 
-                    type="text" 
-                    placeholder="Enter your name"
-                    value={userProfile.name}
-                    onChange={(e) => setUserProfile({...userProfile, name: e.target.value})}
-                    className="w-full bg-natural-card dark:bg-dark-card border border-natural-muted dark:border-dark-muted rounded-2xl py-4 px-6 text-xl font-bold focus:ring-2 focus:ring-natural-accent dark:focus:ring-dark-highlight transition-all"
-                  />
-                </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <label className="text-sm font-semibold text-natural-accent dark:text-dark-highlight uppercase tracking-wider">Weight</label>
-                    <div className="flex bg-natural-muted dark:bg-dark-accent p-0.5 rounded-lg text-[10px] font-bold">
-                      {(['kg', 'lb'] as const).map(u => (
-                        <button 
-                          key={u}
-                          onClick={() => setUserProfile({
-                            ...userProfile, 
-                            weight: convertWeight(userProfile.weight, userProfile.weightUnit, u),
-                            weightUnit: u
-                          })}
-                          className={`px-2 py-1 rounded-md transition-all ${userProfile.weightUnit === u ? 'bg-natural-card dark:bg-dark-card shadow-sm text-natural-ink dark:text-dark-ink' : 'text-natural-accent dark:text-dark-highlight'}`}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-natural-accent dark:text-dark-highlight uppercase tracking-wider">Gender</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {(['male', 'female'] as const).map(g => (
+                          <button 
+                            key={g}
+                            onClick={() => setUserProfile({...userProfile, gender: g})}
+                            className={`py-3 rounded-2xl font-bold transition-all border ${userProfile.gender === g ? 'bg-natural-ink dark:bg-dark-highlight border-natural-ink dark:border-dark-highlight text-natural-bg dark:text-dark-bg' : 'bg-natural-card dark:bg-dark-card border-natural-muted dark:border-dark-muted text-natural-accent dark:text-dark-highlight'}`}
+                          >
+                            {g.charAt(0).toUpperCase() + g.slice(1)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-natural-accent dark:text-dark-highlight uppercase tracking-wider">Age</label>
+                      <input 
+                        type="number" 
+                        value={userProfile.age || ''}
+                        onChange={(e) => setUserProfile({...userProfile, age: Number(e.target.value)})}
+                        className="w-full bg-natural-card dark:bg-dark-card border border-natural-muted dark:border-dark-muted rounded-2xl py-3 px-6 text-xl font-bold focus:ring-2 focus:ring-natural-accent dark:focus:ring-dark-highlight transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <label className="text-sm font-semibold text-natural-accent dark:text-dark-highlight uppercase tracking-wider">Weight</label>
+                        <div className="flex bg-natural-muted dark:bg-dark-accent p-0.5 rounded-lg text-[10px] font-bold">
+                          {(['kg', 'lb'] as const).map(u => (
+                            <button 
+                              key={u}
+                              onClick={() => setUserProfile({
+                                ...userProfile, 
+                                weight: convertWeight(userProfile.weight, userProfile.weightUnit, u),
+                                weightUnit: u
+                              })}
+                              className={`px-2 py-1 rounded-md transition-all ${userProfile.weightUnit === u ? 'bg-natural-card dark:bg-dark-card shadow-sm text-natural-ink dark:text-dark-ink' : 'text-natural-accent dark:text-dark-highlight'}`}
+                            >
+                              {u.toUpperCase()}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <input 
+                        type="number" 
+                        value={userProfile.weight || ''}
+                        onChange={(e) => setUserProfile({...userProfile, weight: Number(e.target.value)})}
+                        className="w-full bg-natural-card dark:bg-dark-card border border-natural-muted dark:border-dark-muted rounded-2xl py-4 px-6 text-xl font-bold focus:ring-2 focus:ring-natural-accent dark:text-dark-highlight transition-all"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <label className="text-sm font-semibold text-natural-accent dark:text-dark-highlight uppercase tracking-wider">Height</label>
+                        <div className="flex bg-natural-muted dark:bg-dark-accent p-0.5 rounded-lg text-[10px] font-bold">
+                          {(['cm', 'ft'] as const).map(u => (
+                            <button 
+                              key={u}
+                              onClick={() => setUserProfile({
+                                ...userProfile, 
+                                height: convertHeight(userProfile.height, userProfile.heightUnit, u),
+                                heightUnit: u
+                              })}
+                              className={`px-2 py-1 rounded-md transition-all ${userProfile.heightUnit === u ? 'bg-natural-card dark:bg-dark-card shadow-sm text-natural-ink dark:text-dark-ink' : 'text-natural-accent dark:text-dark-highlight'}`}
+                            >
+                              {u.toUpperCase()}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <input 
+                        type="number" 
+                        value={userProfile.height || ''}
+                        onChange={(e) => setUserProfile({...userProfile, height: Number(e.target.value)})}
+                        className="w-full bg-natural-card dark:bg-dark-card border border-natural-muted dark:border-dark-muted rounded-2xl py-4 px-6 text-xl font-bold focus:ring-2 focus:ring-natural-accent dark:focus:ring-dark-highlight transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <button 
+                    disabled={!isStep1Valid}
+                    onClick={() => setOnboardingStep(2)}
+                    className={`w-full py-5 rounded-[24px] font-bold text-xl flex items-center justify-center gap-3 transition-all shadow-xl mt-4 ${
+                      isStep1Valid 
+                        ? 'bg-natural-ink dark:bg-dark-highlight text-natural-bg dark:text-dark-bg hover:opacity-90' 
+                        : 'bg-natural-muted dark:bg-dark-accent text-natural-accent dark:text-dark-highlight cursor-not-allowed opacity-50'
+                    }`}
+                  >
+                    Proceed <ArrowRight size={20} />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="space-y-4">
+                    <label className="text-sm font-semibold text-natural-accent dark:text-dark-highlight uppercase tracking-wider">Activity Level</label>
+                    <div className="grid grid-cols-1 gap-2">
+                      {[
+                        { id: 'sedentary', label: 'Sedentary', desc: 'Little to no exercise' },
+                        { id: 'light', label: 'Lightly Active', desc: 'Exercise 1–3 days/week' },
+                        { id: 'moderate', label: 'Moderately Active', desc: 'Exercise 3–5 days/week' },
+                        { id: 'very', label: 'Very Active', desc: 'Hard exercise 6–7 days/week' },
+                        { id: 'extra', label: 'Extra Active', desc: 'Physical job or athlete' }
+                      ].map((level) => (
+                        <button
+                          key={level.id}
+                          onClick={() => setUserProfile({...userProfile, activityLevel: level.id as any})}
+                          className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${
+                            userProfile.activityLevel === level.id 
+                              ? 'bg-natural-ink dark:bg-dark-highlight border-natural-ink dark:border-dark-highlight text-natural-bg dark:text-dark-bg' 
+                              : 'bg-natural-card dark:bg-dark-card border-natural-muted dark:border-dark-muted text-natural-ink dark:text-dark-ink'
+                          }`}
                         >
-                          {u.toUpperCase()}
+                          <div className="text-left">
+                            <span className="font-bold text-sm block">{level.label}</span>
+                            <span className="text-[10px] opacity-60">{level.desc}</span>
+                          </div>
+                          {userProfile.activityLevel === level.id && <Check size={16} />}
                         </button>
                       ))}
                     </div>
                   </div>
-                  <input 
-                    type="number" 
-                    value={userProfile.weight}
-                    onChange={(e) => setUserProfile({...userProfile, weight: Number(e.target.value)})}
-                    className="w-full bg-natural-card dark:bg-dark-card border border-natural-muted dark:border-dark-muted rounded-2xl py-4 px-6 text-xl font-bold focus:ring-2 focus:ring-natural-accent dark:focus:ring-dark-highlight transition-all"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <label className="text-sm font-semibold text-natural-accent dark:text-dark-highlight uppercase tracking-wider">Height</label>
-                    <div className="flex bg-natural-muted dark:bg-dark-accent p-0.5 rounded-lg text-[10px] font-bold">
-                      {(['cm', 'ft'] as const).map(u => (
-                        <button 
-                          key={u}
-                          onClick={() => setUserProfile({
-                            ...userProfile, 
-                            height: convertHeight(userProfile.height, userProfile.heightUnit, u),
-                            heightUnit: u
-                          })}
-                          className={`px-2 py-1 rounded-md transition-all ${userProfile.heightUnit === u ? 'bg-natural-card dark:bg-dark-card shadow-sm text-natural-ink dark:text-dark-ink' : 'text-natural-accent dark:text-dark-highlight'}`}
+
+                  <div className="space-y-4">
+                    <label className="text-sm font-semibold text-natural-accent dark:text-dark-highlight uppercase tracking-wider">What is your goal?</label>
+                    <div className="grid gap-3">
+                      {(['cut', 'maintain', 'bulk', 'custom'] as const).map((goal) => (
+                        <button
+                          key={goal}
+                          onClick={() => setUserProfile({...userProfile, goal})}
+                          className={`flex items-center justify-between p-5 rounded-2xl border transition-all ${
+                            userProfile.goal === goal 
+                              ? 'bg-natural-ink dark:bg-dark-highlight border-natural-ink dark:border-dark-highlight text-natural-bg dark:text-dark-bg shadow-lg shadow-natural-muted dark:shadow-none' 
+                              : 'bg-natural-card dark:bg-dark-card border-natural-muted dark:border-dark-muted text-natural-ink dark:text-dark-ink hover:border-natural-accent dark:hover:border-dark-highlight'
+                          }`}
                         >
-                          {u.toUpperCase()}
+                          <div className="text-left">
+                            <span className="font-bold capitalize text-lg block">{goal}</span>
+                            <span className="text-xs opacity-60">
+                              {goal === 'cut' && 'Lose weight & fat'}
+                              {goal === 'maintain' && 'Keep current weight'}
+                              {goal === 'bulk' && 'Gain muscle & strength'}
+                              {goal === 'custom' && 'Set your own targets'}
+                            </span>
+                          </div>
+                          {userProfile.goal === goal && <Check size={20} />}
                         </button>
                       ))}
                     </div>
                   </div>
-                  <input 
-                    type="number" 
-                    value={userProfile.height}
-                    onChange={(e) => setUserProfile({...userProfile, height: Number(e.target.value)})}
-                    className="w-full bg-natural-card dark:bg-dark-card border border-natural-muted dark:border-dark-muted rounded-2xl py-4 px-6 text-xl font-bold focus:ring-2 focus:ring-natural-accent dark:focus:ring-dark-highlight transition-all"
-                  />
-                </div>
-              </div>
 
-              <div className="space-y-4">
-                <label className="text-sm font-semibold text-natural-accent dark:text-dark-highlight uppercase tracking-wider">What is your goal?</label>
-                <div className="grid gap-3">
-                  {(['cut', 'maintain', 'bulk', 'custom'] as const).map((goal) => (
-                    <button
-                      key={goal}
-                      onClick={() => setUserProfile({...userProfile, goal})}
-                      className={`flex items-center justify-between p-5 rounded-2xl border transition-all ${
-                        userProfile.goal === goal 
-                          ? 'bg-natural-ink dark:bg-dark-highlight border-natural-ink dark:border-dark-highlight text-natural-bg dark:text-dark-bg shadow-lg shadow-natural-muted dark:shadow-none' 
-                          : 'bg-natural-card dark:bg-dark-card border-natural-muted dark:border-dark-muted text-natural-ink dark:text-dark-ink hover:border-natural-accent dark:hover:border-dark-highlight'
+                  <div className="flex gap-4 mt-4">
+                    <button 
+                      onClick={() => setOnboardingStep(1)}
+                      className="flex-1 bg-natural-card dark:bg-dark-card text-natural-ink dark:text-dark-ink py-5 rounded-[24px] font-bold text-xl border border-natural-muted dark:border-dark-muted hover:bg-natural-muted dark:hover:bg-dark-accent transition-all"
+                    >
+                      Back
+                    </button>
+                    <button 
+                      disabled={!isStep2Valid}
+                      onClick={() => completeOnboarding(userProfile)}
+                      className={`flex-[2] py-5 rounded-[24px] font-bold text-xl flex items-center justify-center gap-3 transition-all shadow-xl ${
+                        isStep2Valid 
+                          ? 'bg-natural-ink dark:bg-dark-highlight text-natural-bg dark:text-dark-bg hover:opacity-90 shadow-natural-muted dark:shadow-none' 
+                          : 'bg-natural-muted dark:bg-dark-accent text-natural-accent dark:text-dark-highlight cursor-not-allowed opacity-50'
                       }`}
                     >
-                      <div className="text-left">
-                        <span className="font-bold capitalize text-lg block">{goal}</span>
-                        <span className="text-xs opacity-60">
-                          {goal === 'cut' && 'Lose weight & fat'}
-                          {goal === 'maintain' && 'Keep current weight'}
-                          {goal === 'bulk' && 'Gain muscle & strength'}
-                          {goal === 'custom' && 'Set your own targets'}
-                        </span>
-                      </div>
-                      {userProfile.goal === goal && <Check size={20} />}
+                      Get Started <Check size={20} />
                     </button>
-                  ))}
-                </div>
-              </div>
+                  </div>
+                </>
+              )}
             </div>
-
-            <button 
-              onClick={() => completeOnboarding({...userProfile, onboarded: true})}
-              className="w-full bg-natural-ink dark:bg-dark-highlight text-natural-bg dark:text-dark-bg py-5 rounded-[24px] font-bold text-xl flex items-center justify-center gap-3 hover:opacity-90 transition-all shadow-xl shadow-natural-muted dark:shadow-none mt-4"
-            >
-              Get Started <ArrowRight size={20} />
-            </button>
           </div>
         );
       case 'settings':
@@ -691,6 +862,54 @@ export default function App() {
                     />
                   </div>
                 </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-natural-accent dark:text-slate-400">Gender</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {(['male', 'female'] as const).map(g => (
+                        <button 
+                          key={g}
+                          onClick={() => setUserProfile({...userProfile, gender: g})}
+                          className={`py-2 rounded-xl font-bold transition-all border ${userProfile.gender === g ? 'bg-natural-ink dark:bg-dark-highlight border-natural-ink dark:border-dark-highlight text-natural-bg dark:text-white' : 'bg-natural-bg dark:bg-dark-muted border-natural-muted dark:border-dark-muted text-natural-accent dark:text-slate-400'}`}
+                        >
+                          {g.charAt(0).toUpperCase() + g.slice(1)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-natural-accent dark:text-slate-400">Age</label>
+                    <input 
+                      type="number" 
+                      value={userProfile.age}
+                      onChange={(e) => setUserProfile({...userProfile, age: Number(e.target.value)})}
+                      className="w-full bg-natural-bg dark:bg-dark-muted border-none rounded-xl py-3 px-4 font-bold text-natural-ink dark:text-white focus:ring-2 focus:ring-natural-accent dark:focus:ring-dark-highlight"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-natural-accent dark:text-slate-400">Activity Level</label>
+                  <select 
+                    value={userProfile.activityLevel}
+                    onChange={(e) => setUserProfile({...userProfile, activityLevel: e.target.value as any})}
+                    className="w-full bg-natural-bg dark:bg-dark-muted border-none rounded-xl py-3 px-4 font-bold text-natural-ink dark:text-white focus:ring-2 focus:ring-natural-accent dark:focus:ring-dark-highlight"
+                  >
+                    <option value="sedentary">Sedentary (Little/no exercise)</option>
+                    <option value="light">Lightly Active (1-3 days/week)</option>
+                    <option value="moderate">Moderately Active (3-5 days/week)</option>
+                    <option value="very">Very Active (6-7 days/week)</option>
+                    <option value="extra">Extra Active (Physical job/athlete)</option>
+                  </select>
+                </div>
+
+                <button 
+                  onClick={recalculateGoal}
+                  className="w-full py-3 bg-natural-muted dark:bg-dark-accent text-natural-ink dark:text-white rounded-xl font-bold text-sm hover:opacity-90 transition-all border border-natural-muted dark:border-dark-muted"
+                >
+                  Recalculate Calorie Goal
+                </button>
               </div>
             </section>
 
@@ -707,7 +926,7 @@ export default function App() {
                 </div>
                 <div className="flex justify-between items-center py-2">
                   <span className="text-sm text-natural-accent dark:text-slate-400">Member Since</span>
-                  <span className="text-sm font-bold text-natural-ink dark:text-white">Today</span>
+                  <span className="text-sm font-bold text-natural-ink dark:text-white">{userProfile.joinedAt || 'Today'}</span>
                 </div>
               </div>
             </section>

@@ -4,15 +4,21 @@ export type Page = 'homepage' | 'daily' | 'add-food' | 'goal' | 'onboarding' | '
 
 export type GoalType = 'cut' | 'bulk' | 'maintain' | 'custom';
 
+export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'very' | 'extra';
+
 export interface UserProfile {
   name: string;
   photoUrl?: string;
+  age: number;
+  gender: 'male' | 'female';
   weight: number;
   weightUnit: 'kg' | 'lb';
   height: number;
   heightUnit: 'cm' | 'ft';
+  activityLevel: ActivityLevel;
   goal: GoalType;
   onboarded: boolean;
+  joinedAt?: string;
 }
 
 export interface Food {
@@ -49,24 +55,24 @@ export interface DietPlan {
 
 export const DIET_PLANS: Record<string, DietPlan> = {
   balanced: {
-    name: 'Balanced',
-    description: 'A moderate approach for maintenance and overall health.',
+    name: 'Balanced (Maintaining)',
+    description: 'Homeostasis: Hormonal and energy balance.',
     proteinPct: 30,
     carbsPct: 40,
     fatPct: 30,
   },
   cutting: {
     name: 'High Protein (Cutting)',
-    description: 'Higher protein to preserve muscle while losing fat.',
-    proteinPct: 45,
-    carbsPct: 30,
+    description: 'Fat Loss: Muscle preservation and satiety.',
+    proteinPct: 40,
+    carbsPct: 35,
     fatPct: 25,
   },
   bulking: {
     name: 'High Carb (Bulking)',
-    description: 'Higher carbs to fuel intense workouts and muscle growth.',
+    description: 'Hypertrophy: Glycogen saturation and insulin response.',
     proteinPct: 25,
-    carbsPct: 55,
-    fatPct: 20,
+    carbsPct: 50,
+    fatPct: 25,
   },
 };
