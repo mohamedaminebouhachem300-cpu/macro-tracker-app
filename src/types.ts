@@ -1,10 +1,29 @@
 import { Home, Target, PlusCircle, Calendar } from 'lucide-react';
 
-export type Page = 'homepage' | 'daily' | 'add-food' | 'goal' | 'onboarding' | 'settings';
+export type Page = 'homepage' | 'daily' | 'add-food' | 'goal' | 'onboarding' | 'settings' | 'workout';
 
 export type GoalType = 'cut' | 'bulk' | 'maintain' | 'custom';
 
 export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'very' | 'extra';
+
+export interface WorkoutSet {
+  id: string;
+  reps: number;
+  weight: number;
+}
+
+export interface WorkoutExercise {
+  id: string;
+  name: string;
+  sets: WorkoutSet[];
+}
+
+export interface Workout {
+  id: string;
+  name: string;
+  date: number;
+  exercises: WorkoutExercise[];
+}
 
 export interface UserProfile {
   name: string;

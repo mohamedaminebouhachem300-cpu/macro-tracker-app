@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Home, Target, PlusCircle, Calendar, ChevronRight, Search, Trash2, Plus, Minus, Settings, User, ArrowRight, Check, Camera, Moon, Sun, Beef, Wheat, Flame, X, Globe } from 'lucide-react';
+import { Home, Target, PlusCircle, Calendar, ChevronRight, Search, Trash2, Plus, Minus, Settings, User, ArrowRight, Check, Camera, Moon, Sun, Beef, Wheat, Flame, X, Globe, Dumbbell } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Page, Food, LoggedFood, DIET_PLANS, DietPlan, MealType, UserProfile, GoalType } from './types';
+import { Page, Food, LoggedFood, DIET_PLANS, DietPlan, MealType, UserProfile, GoalType, Workout, WorkoutExercise, WorkoutSet } from './types';
 import { FOOD_DATABASE as STATIC_FOOD_DATABASE } from './foodDatabase';
 import { translations } from './translations';
 
@@ -128,6 +128,14 @@ export default function App() {
   const [isCreatingRecipe, setIsCreatingRecipe] = useState(false);
   const [recipeName, setRecipeName] = useState('');
   const [recipeIngredients, setRecipeIngredients] = useState<{ food: Food; amount: number }[]>([]);
+  const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [isCreatingWorkout, setIsCreatingWorkout] = useState(false);
+  const [currentWorkout, setCurrentWorkout] = useState<Workout>({
+    id: '',
+    name: '',
+    date: Date.now(),
+    exercises: []
+  });
 
   // Load data from localStorage
   useEffect(() => {
@@ -136,6 +144,7 @@ export default function App() {
     const savedProfile = localStorage.getItem('macro_profile');
     const savedTheme = localStorage.getItem('macro_theme');
     const savedCustomFoods = localStorage.getItem('macro_custom_foods');
+    const savedWorkouts = localStorage.getItem('macro_workouts');
     const lastActiveDate = localStorage.getItem('macro_last_active_date');
     const today = new Date().toLocaleDateString();
     
@@ -145,6 +154,10 @@ export default function App() {
 
     if (savedCustomFoods) {
       setCustomFoods(JSON.parse(savedCustomFoods));
+    }
+
+    if (savedWorkouts) {
+      setWorkouts(JSON.parse(savedWorkouts));
     }
     
     if (savedProfile) {
@@ -220,6 +233,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('macro_custom_foods', JSON.stringify(customFoods));
   }, [customFoods]);
+
+  useEffect(() => {
+    localStorage.setItem('macro_workouts', JSON.stringify(workouts));
+  }, [workouts]);
 
   useEffect(() => {
     localStorage.setItem('macro_theme', isDarkMode ? 'dark' : 'light');
@@ -916,6 +933,25 @@ export default function App() {
             </section>
 
             <section className="space-y-4">
+              <h2 className="text-sm font-semibold text-natural-accent dark:text-white uppercase tracking-wider">Workout</h2>
+              <button 
+                onClick={() => setCurrentPage('workout')}
+                className="w-full bg-natural-card dark:bg-dark-card rounded-3xl p-6 border border-natural-muted dark:border-dark-muted shadow-sm flex items-center justify-between hover:border-natural-accent dark:hover:border-dark-highlight transition-all"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-500">
+                    <Dumbbell size={24} />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-natural-ink dark:text-white">Workout Tracker</p>
+                    <p className="text-xs text-natural-accent dark:text-slate-400">Log and track your gym progress</p>
+                  </div>
+                </div>
+                <ChevronRight size={20} className="text-natural-accent dark:text-slate-400" />
+              </button>
+            </section>
+
+            <section className="space-y-4">
               <h2 className="text-sm font-semibold text-natural-accent dark:text-white uppercase tracking-wider">{translations[userProfile.language].profile}</h2>
               <div className="bg-natural-card dark:bg-dark-card rounded-3xl p-6 border border-natural-muted dark:border-dark-muted shadow-sm space-y-6">
                 <div className="flex items-center gap-6">
@@ -1077,6 +1113,214 @@ export default function App() {
             >
               {translations[userProfile.language].deleteData}
             </button>
+          </div>
+        );
+      case 'workout':
+        return (
+          <div className="p-6 space-y-8 pb-24">
+            <header className="flex items-center gap-4 mb-8">
+              <button onClick={() => setCurrentPage('settings')} className="p-2 bg-natural-card dark:bg-dark-card rounded-xl border border-natural-muted dark:border-dark-muted text-natural-accent dark:text-slate-400">
+                <ChevronRight size={24} className="rotate-180" />
+              </button>
+              <h1 className="text-2xl font-bold text-natural-ink dark:text-white">Workout Tracker</h1>
+            </header>
+
+            {!isCreatingWorkout ? (
+              <>
+                <button 
+                  onClick={() => {
+                    setCurrentWorkout({ id: `workout-${Date.now()}`, name: '', date: Date.now(), exercises: [] });
+                    setIsCreatingWorkout(true);
+                  }}
+                  className="w-full bg-natural-ink dark:bg-dark-highlight text-natural-bg dark:text-dark-bg py-4 rounded-2xl font-bold text-lg hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-lg"
+                >
+                  <Plus size={20} />
+                  <span>Start New Workout</span>
+                </button>
+
+                <div className="space-y-4">
+                  <h2 className="text-sm font-semibold text-natural-accent dark:text-white uppercase tracking-wider">Past Workouts</h2>
+                  {workouts.length === 0 ? (
+                    <div className="text-center py-12 text-natural-accent dark:text-slate-500 bg-natural-muted/20 dark:bg-dark-muted/20 rounded-[32px] border border-dashed border-natural-muted dark:border-dark-muted">
+                      <Dumbbell className="mx-auto mb-4 opacity-20" size={48} />
+                      <p className="italic">No workouts logged yet.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {workouts.map(workout => (
+                        <div key={workout.id} className="bg-natural-card dark:bg-dark-card rounded-3xl p-6 border border-natural-muted dark:border-dark-muted shadow-sm">
+                          <div className="flex justify-between items-start mb-4">
+                            <div>
+                              <h3 className="font-bold text-lg text-natural-ink dark:text-white">{workout.name || 'Unnamed Workout'}</h3>
+                              <p className="text-xs text-natural-accent dark:text-slate-400">{new Date(workout.date).toLocaleDateString()}</p>
+                            </div>
+                            <button 
+                              onClick={() => setWorkouts(workouts.filter(w => w.id !== workout.id))}
+                              className="p-2 text-natural-accent dark:text-slate-400 hover:text-red-500 transition-colors"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
+                          <div className="space-y-3">
+                            {workout.exercises.map((ex, i) => (
+                              <div key={ex.id} className="bg-natural-muted/50 dark:bg-dark-accent/50 p-3 rounded-xl">
+                                <p className="font-medium text-sm text-natural-ink dark:text-slate-200 mb-2">{ex.name}</p>
+                                <div className="grid grid-cols-3 gap-2 text-xs text-natural-accent dark:text-slate-400">
+                                  {ex.sets.map((set, j) => (
+                                    <div key={set.id} className="bg-natural-card dark:bg-dark-card p-2 rounded-lg text-center border border-natural-muted dark:border-dark-muted">
+                                      <span className="block font-bold text-natural-ink dark:text-white">{set.weight}kg</span>
+                                      <span className="block text-[10px]">{set.reps} reps</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-natural-accent dark:text-slate-400">Workout Name</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. Push Day, Leg Day"
+                    value={currentWorkout.name}
+                    onChange={(e) => setCurrentWorkout({...currentWorkout, name: e.target.value})}
+                    className="w-full bg-natural-card dark:bg-dark-card border border-natural-muted dark:border-dark-muted rounded-xl py-3 px-4 font-bold text-natural-ink dark:text-white focus:ring-2 focus:ring-natural-accent dark:focus:ring-dark-highlight"
+                  />
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-natural-accent dark:text-white uppercase tracking-wider">Exercises</h3>
+                  {currentWorkout.exercises.map((exercise, exIndex) => (
+                    <div key={exercise.id} className="bg-natural-card dark:bg-dark-card rounded-3xl p-5 border border-natural-muted dark:border-dark-muted shadow-sm space-y-4">
+                      <div className="flex justify-between items-center">
+                        <input 
+                          type="text" 
+                          placeholder="Exercise Name (e.g. Bench Press)"
+                          value={exercise.name}
+                          onChange={(e) => {
+                            const newExercises = [...currentWorkout.exercises];
+                            newExercises[exIndex].name = e.target.value;
+                            setCurrentWorkout({...currentWorkout, exercises: newExercises});
+                          }}
+                          className="flex-1 bg-transparent border-none font-bold text-natural-ink dark:text-white focus:outline-none placeholder:text-natural-accent/50 dark:placeholder:text-slate-500"
+                        />
+                        <button 
+                          onClick={() => {
+                            const newExercises = currentWorkout.exercises.filter((_, i) => i !== exIndex);
+                            setCurrentWorkout({...currentWorkout, exercises: newExercises});
+                          }}
+                          className="p-2 text-natural-accent dark:text-slate-400 hover:text-red-500 transition-colors"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+
+                      <div className="space-y-2">
+                        {exercise.sets.map((set, setIndex) => (
+                          <div key={set.id} className="flex items-center gap-3">
+                            <span className="text-xs font-bold text-natural-accent dark:text-slate-500 w-4">{setIndex + 1}</span>
+                            <div className="flex-1 bg-natural-muted dark:bg-dark-accent rounded-xl flex items-center px-3 py-2">
+                              <input 
+                                type="number" 
+                                placeholder="0"
+                                value={set.weight || ''}
+                                onChange={(e) => {
+                                  const newExercises = [...currentWorkout.exercises];
+                                  newExercises[exIndex].sets[setIndex].weight = Number(e.target.value);
+                                  setCurrentWorkout({...currentWorkout, exercises: newExercises});
+                                }}
+                                className="w-full bg-transparent border-none text-center font-bold text-natural-ink dark:text-white focus:outline-none"
+                              />
+                              <span className="text-xs text-natural-accent dark:text-slate-400 font-medium">kg</span>
+                            </div>
+                            <span className="text-natural-accent dark:text-slate-500">×</span>
+                            <div className="flex-1 bg-natural-muted dark:bg-dark-accent rounded-xl flex items-center px-3 py-2">
+                              <input 
+                                type="number" 
+                                placeholder="0"
+                                value={set.reps || ''}
+                                onChange={(e) => {
+                                  const newExercises = [...currentWorkout.exercises];
+                                  newExercises[exIndex].sets[setIndex].reps = Number(e.target.value);
+                                  setCurrentWorkout({...currentWorkout, exercises: newExercises});
+                                }}
+                                className="w-full bg-transparent border-none text-center font-bold text-natural-ink dark:text-white focus:outline-none"
+                              />
+                              <span className="text-xs text-natural-accent dark:text-slate-400 font-medium">reps</span>
+                            </div>
+                            <button 
+                              onClick={() => {
+                                const newExercises = [...currentWorkout.exercises];
+                                newExercises[exIndex].sets = newExercises[exIndex].sets.filter((_, i) => i !== setIndex);
+                                setCurrentWorkout({...currentWorkout, exercises: newExercises});
+                              }}
+                              className="p-2 text-natural-accent dark:text-slate-400 hover:text-red-500 transition-colors"
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
+                      <button 
+                        onClick={() => {
+                          const newExercises = [...currentWorkout.exercises];
+                          newExercises[exIndex].sets.push({ id: `set-${Date.now()}`, reps: 0, weight: 0 });
+                          setCurrentWorkout({...currentWorkout, exercises: newExercises});
+                        }}
+                        className="w-full py-2 border border-dashed border-natural-accent/30 dark:border-dark-highlight/30 rounded-xl text-xs font-bold text-natural-accent dark:text-dark-highlight hover:bg-natural-accent/5 dark:hover:bg-dark-highlight/5 transition-all"
+                      >
+                        + Add Set
+                      </button>
+                    </div>
+                  ))}
+
+                  <button 
+                    onClick={() => {
+                      setCurrentWorkout({
+                        ...currentWorkout,
+                        exercises: [
+                          ...currentWorkout.exercises,
+                          { id: `ex-${Date.now()}`, name: '', sets: [{ id: `set-${Date.now()}`, reps: 0, weight: 0 }] }
+                        ]
+                      });
+                    }}
+                    className="w-full py-4 border-2 border-dashed border-natural-muted dark:border-dark-muted rounded-2xl font-bold text-natural-accent dark:text-slate-400 hover:border-natural-accent dark:hover:border-dark-highlight hover:text-natural-ink dark:hover:text-white transition-all flex items-center justify-center gap-2"
+                  >
+                    <Plus size={20} />
+                    <span>Add Exercise</span>
+                  </button>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button 
+                    onClick={() => setIsCreatingWorkout(false)}
+                    className="flex-1 bg-natural-card dark:bg-dark-card text-natural-ink dark:text-white py-4 rounded-2xl font-bold border border-natural-muted dark:border-dark-muted hover:bg-natural-muted dark:hover:bg-dark-accent transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={() => {
+                      if (!currentWorkout.name) currentWorkout.name = 'Workout';
+                      setWorkouts([currentWorkout, ...workouts]);
+                      setIsCreatingWorkout(false);
+                    }}
+                    disabled={currentWorkout.exercises.length === 0}
+                    className="flex-[2] bg-natural-ink dark:bg-dark-highlight text-natural-bg dark:text-dark-bg py-4 rounded-2xl font-bold hover:opacity-90 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    <Check size={20} />
+                    <span>Save Workout</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         );
       case 'homepage':
